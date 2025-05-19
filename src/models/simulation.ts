@@ -15,6 +15,10 @@ export interface SimulationState {
   lastSkillUsed?: string; 
   lastSkillTime?: number;
   
+  // 딜레이 관련 추가 필드
+  inSkillDelay: boolean; // 현재 스킬 딜레이 중인지 여부
+  skillDelayEndTime?: number; // 현재 딜레이가 끝나는 시간 (ms)
+  
   // 루미너스 특화 상태
   equilibriumDuration: number; // 이퀼 지속시간 (ms)
   memorizeAvailable: boolean; // 메모라이즈 사용 가능 상태
@@ -46,6 +50,9 @@ export const defaultSimulationState: SimulationState = {
   
   activeBuffs: [],
   cooldowns: {},
+  
+  // 딜레이 관련 상태 초기화
+  inSkillDelay: false,
   
   equilibriumDuration: 17000, // 기본 17초 (버프 지속시간 증가 효과 적용 전)
   memorizeAvailable: true,

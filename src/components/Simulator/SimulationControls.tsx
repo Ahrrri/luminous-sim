@@ -5,7 +5,8 @@ import type { RootState } from '../../store';
 import { startSimulation, pauseSimulation, resetSimulation } from '../../store/slices/simulationSlice';
 import { resetResults } from '../../store/slices/resultsSlice';
 import { SimulationEngine } from '../../engine/simulator';
-import { BasicPolicy, EquilibriumPriorityPolicy, BurstCyclePolicy, ContinuousRingPolicy, RealisticPlayerPolicy } from '../../engine/policies';
+// import { BasicPolicy, EquilibriumPriorityPolicy, BurstCyclePolicy, ContinuousRingPolicy, RealisticPlayerPolicy } from '../../engine/policies';
+import { BasicPolicy } from '../../engine/policies';
 
 interface SimulationControlsProps {
   onDamage: (damage: number, skill: string, time: number) => void;
@@ -35,18 +36,18 @@ const SimulationControls: React.FC<SimulationControlsProps> = ({
     // 선택된 정책 생성
     let policy;
     switch (selectedPolicy) {
-      case 'equilibrium':
-        policy = new EquilibriumPriorityPolicy();
-        break;
-      case 'burst':
-        policy = new BurstCyclePolicy();
-        break;
-      case 'continuous':
-        policy = new ContinuousRingPolicy();
-        break;
-      case 'realistic':
-        policy = new RealisticPlayerPolicy();
-        break;
+      // case 'equilibrium':
+      //   policy = new EquilibriumPriorityPolicy();
+      //   break;
+      // case 'burst':
+      //   policy = new BurstCyclePolicy();
+      //   break;
+      // case 'continuous':
+      //   policy = new ContinuousRingPolicy();
+      //   break;
+      // case 'realistic':
+      //   policy = new RealisticPlayerPolicy();
+      //   break;
       default:
         policy = new BasicPolicy();
     }

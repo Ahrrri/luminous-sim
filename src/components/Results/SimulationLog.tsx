@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
-import { formatTime, formatNumber } from '../../utils/helpers';
+import { formatTime, formatNumber, formatTimeWithMs } from '../../utils/helpers';
 import { skills } from '../../models/skills';
 import './simulationLog.css';
 
@@ -35,10 +35,10 @@ const SimulationLog: React.FC = () => {
 
   // 상태 변경 이벤트 추가
   stateTimeline.forEach(event => {
-    const stateName = 
-      event.state === 'LIGHT' ? '빛' : 
-      event.state === 'DARK' ? '어둠' : '이퀼리브리엄';
-    
+    const stateName =
+      event.state === 'LIGHT' ? '빛' :
+        event.state === 'DARK' ? '어둠' : '이퀼리브리엄';
+
     events.push({
       time: event.time,
       type: 'STATE',
@@ -124,14 +124,14 @@ const SimulationLog: React.FC = () => {
           </label>
         </div>
       </div>
-      
+
       <div className="log-container" ref={logContainerRef}>
         {filteredEvents.map((event, index) => (
-          <div 
-            key={`log-${index}`} 
+          <div
+            key={`log-${index}`}
             className={`log-entry log-${event.type.toLowerCase()}`}
           >
-            <div className="log-time">{formatTime(event.time)}</div>
+            <div className="log-time">{formatTimeWithMs(event.time)}</div>
             <div className="log-content">
               <div className="log-description">{event.description}</div>
               {event.details && <div className="log-details">{event.details}</div>}
@@ -139,7 +139,7 @@ const SimulationLog: React.FC = () => {
           </div>
         ))}
       </div>
-      
+
       <div className="log-summary">
         총 {events.length}개 이벤트, {filteredEvents.length}개 표시됨
       </div>

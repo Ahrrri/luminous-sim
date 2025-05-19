@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
-import { formatTime, formatNumber } from '../../utils/helpers';
+import { formatTime, formatNumber, formatTimeWithMs } from '../../utils/helpers';
 import { skills } from '../../models/skills';
 import './simulationPlayer.css';
 
@@ -38,7 +38,7 @@ const SimulationPlayer: React.FC = () => {
 
     updateTimelineWidth();
     window.addEventListener('resize', updateTimelineWidth);
-    
+
     return () => {
       window.removeEventListener('resize', updateTimelineWidth);
     };
@@ -57,13 +57,13 @@ const SimulationPlayer: React.FC = () => {
 
     // 현재 시간 업데이트 (재생 속도 적용)
     let newTime = currentTime + deltaTime * playbackSpeed;
-    
+
     // 끝에 도달하면 재생 중지
     if (newTime >= maxTime) {
       newTime = maxTime;
       setIsPlaying(false);
     }
-    
+
     setCurrentTime(newTime);
 
     if (isPlaying && newTime < maxTime) {
@@ -118,7 +118,7 @@ const SimulationPlayer: React.FC = () => {
   const currentDamageEvents = damageTimeline.filter(
     event => event.time <= currentTime
   );
-  
+
   const currentStateEvent = stateTimeline
     .filter(event => event.time <= currentTime)
     .sort((a, b) => b.time - a.time)[0];
@@ -147,34 +147,34 @@ const SimulationPlayer: React.FC = () => {
       <div className="player-header">
         <h2>시뮬레이션 플레이어</h2>
         <div className="player-time">
-          {formatTime(currentTime)} / {formatTime(maxTime)}
+          {formatTimeWithMs(currentTime)} / {formatTimeWithMs(maxTime)}
         </div>
       </div>
-      
+
       <div className="player-timeline" ref={timelineRef}>
         <div className="timeline-background">
           {/* 시간 마커 (30초 간격) */}
           {Array.from({ length: Math.ceil(maxTime / 30000) }).map((_, index) => {
             const markerTime = index * 30000;
             return (
-              <div 
+              <div
                 key={`marker-${index}`}
                 className="time-marker"
                 style={{ left: `${timeToPosition(markerTime)}px` }}
               >
                 <div className="marker-line"></div>
-                <div className="marker-label">{formatTime(markerTime)}</div>
+                <div className="marker-label">{formatTimeWithMs(markerTime)}</div>
               </div>
             );
           })}
-          
+
           {/* 상태 변화 표시 */}
           {stateTimeline.map((stateEvent, index) => {
             const nextEvent = stateTimeline[index + 1];
-            const eventWidth = nextEvent 
+            const eventWidth = nextEvent
               ? timeToPosition(nextEvent.time) - timeToPosition(stateEvent.time)
               : timeToPosition(maxTime) - timeToPosition(stateEvent.time);
-              
+
             return (
               <div
                 key={`state-${index}`}
@@ -186,20 +186,20 @@ const SimulationPlayer: React.FC = () => {
               ></div>
             );
           })}
-          
+
           {/* 버프 표시 */}
           {buffsTimeline
             .filter(event => event.action === 'APPLIED')
             .map((buffStart, index) => {
               const buffEnd = buffsTimeline.find(
-                e => e.buffId === buffStart.buffId && 
-                     e.action === 'EXPIRED' && 
-                     e.time > buffStart.time
+                e => e.buffId === buffStart.buffId &&
+                  e.action === 'EXPIRED' &&
+                  e.time > buffStart.time
               );
-              
+
               const endTime = buffEnd ? buffEnd.time : maxTime;
               const buffWidth = timeToPosition(endTime) - timeToPosition(buffStart.time);
-              
+
               return (
                 <div
                   key={`buff-${index}`}
@@ -209,11 +209,11 @@ const SimulationPlayer: React.FC = () => {
                     width: `${buffWidth}px`,
                     top: `${20 + (index % 5) * 4}px` // 버프들을 겹치지 않게 배치
                   }}
-                  title={`${buffStart.buffId}: ${formatTime(buffStart.time)} - ${formatTime(endTime)}`}
+                  title={`${buffStart.buffId}: ${formatTimeWithMs(buffStart.time)} - ${formatTimeWithMs(endTime)}`}
                 ></div>
               );
             })}
-          
+
           {/* 스킬 사용 표시 */}
           {damageTimeline.map((event, index) => (
             <div
@@ -225,17 +225,17 @@ const SimulationPlayer: React.FC = () => {
               title={`${skills[event.skill]?.name || event.skill}: ${formatNumber(event.damage)}`}
             ></div>
           ))}
-          
+
           {/* 현재 위치 표시 */}
-          <div 
+          <div
             className="playhead"
             style={{
               left: `${timeToPosition(currentTime)}px`
             }}
           ></div>
         </div>
-        
-        <input 
+
+        <input
           type="range"
           min="0"
           max={maxTime}
@@ -244,7 +244,7 @@ const SimulationPlayer: React.FC = () => {
           className="timeline-slider"
         />
       </div>
-      
+
       <div className="player-controls">
         <button onClick={restart} className="control-button restart-button">
           처음부터
@@ -264,24 +264,24 @@ const SimulationPlayer: React.FC = () => {
           </select>
         </div>
       </div>
-      
+
       <div className="player-info">
         <div className="player-status">
           <div className="current-state">
-            현재 상태: 
+            현재 상태:
             <span className={`state-label ${currentStateEvent?.state.toLowerCase() || 'light'}`}>
-              {currentStateEvent?.state === 'LIGHT' ? '빛' : 
-               currentStateEvent?.state === 'DARK' ? '어둠' : 
-               currentStateEvent?.state === 'EQUILIBRIUM' ? '이퀼리브리엄' : '빛'}
+              {currentStateEvent?.state === 'LIGHT' ? '빛' :
+                currentStateEvent?.state === 'DARK' ? '어둠' :
+                  currentStateEvent?.state === 'EQUILIBRIUM' ? '이퀼리브리엄' : '빛'}
             </span>
           </div>
-          
+
           <div className="current-damage">
             누적 데미지: {formatNumber(currentTotalDamage)}
           </div>
-          
+
           <div className="active-buffs">
-            활성 버프: 
+            활성 버프:
             {Object.keys(currentBuffs).length > 0 ? (
               <div className="buff-icons">
                 {Object.keys(currentBuffs).map((buffId, i) => (
@@ -295,7 +295,7 @@ const SimulationPlayer: React.FC = () => {
             )}
           </div>
         </div>
-        
+
         <div className="recent-skills">
           <h3>최근 스킬</h3>
           <ul>

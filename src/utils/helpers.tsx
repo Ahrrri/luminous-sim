@@ -14,6 +14,13 @@ export function formatTime(ms: number): string {
   return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
+export function formatTimeWithMs(ms: number): string {
+  const minutes = Math.floor(ms / 60000);
+  const seconds = Math.floor((ms % 60000) / 1000);
+  const milliseconds = ms % 1000;
+  return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+}
+
 export function calculateCooldown(baseCooldown: number, merLevel: number, cooldownReduction: number): number {
   // 메르 레벨과 쿨감에 따른 실제 쿨타임 계산
   const merReduction = baseCooldown * (merLevel / 100);
