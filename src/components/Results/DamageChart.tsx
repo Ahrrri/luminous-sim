@@ -13,6 +13,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
+import './results.css';
 
 const DamageChart: React.FC = () => {
   const { damageTimeline, totalDamage, duration } = useSelector((state: RootState) => state.results);

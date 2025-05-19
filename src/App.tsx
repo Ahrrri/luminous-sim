@@ -1,4 +1,4 @@
-// src/App.tsx
+// src/App.tsx 수정
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import CharacterSettings from './components/Settings/CharacterSettings';
@@ -7,6 +7,7 @@ import SimulationControls from './components/Simulator/SimulationControls';
 import StateViewer from './components/Simulator/StateViewer';
 import DamageChart from './components/Results/DamageChart';
 import SkillBreakdown from './components/Results/SkillBreakdown';
+import VerticalTimelineChart from './components/Results/VerticalTimelineChart'; // 추가
 import type { RootState } from './store';
 import { addDamageSnapshot, addBuffEvent, addStateChange } from './store/slices/resultsSlice';
 import './App.css';
@@ -15,6 +16,7 @@ function App() {
   const dispatch = useDispatch();
   const simulation = useSelector((state: RootState) => state.simulation);
   const [activeTab, setActiveTab] = useState<'settings' | 'simulator' | 'results'>('simulator');
+
   // 이벤트 핸들러 함수 수정
   const handleDamage = (damage: number, skill: string, time: number) => {
     try {
@@ -44,10 +46,11 @@ function App() {
       console.error("버프 변경 처리 중 오류:", error);
     }
   };
+
   return (
     <div className="App">
       <header className="App-header">
-        <h1>루미너스 DPS 시뮬레이터</h1>
+        <h1>엄</h1>
         <div className="tabs">
           <button
             className={activeTab === 'settings' ? 'active' : ''}
@@ -99,6 +102,7 @@ function App() {
           <div className="results-panel">
             <DamageChart />
             <SkillBreakdown />
+            <VerticalTimelineChart />
           </div>
         )}
       </div>

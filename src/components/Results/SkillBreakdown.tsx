@@ -15,6 +15,7 @@ import {
   ResponsiveContainer,
   Cell,
 } from 'recharts';
+import './results.css';
 
 interface SkillSummary {
   skillId: string;

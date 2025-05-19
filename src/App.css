@@ -74,12 +74,59 @@
   max-width: 800px;
 }
 
+/* src/App.css 수정 */
 .results-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* 2열 그리드 레이아웃 */
+  grid-template-rows: auto auto;   /* 행 높이는 내용에 맞게 자동 조정 */
+  gap: 1.5rem;
+  width: 100%;
+  max-width: 100%;
+}
+
+.results-panel .damage-chart {
+  grid-column: 1 / 2;  /* 첫 번째 열 */
+  grid-row: 1 / 2;     /* 첫 번째 행 */
+}
+
+.results-panel .skill-breakdown {
+  grid-column: 1 / 2;  /* 첫 번째 열 */
+  grid-row: 2 / 3;     /* 두 번째 행 */
+}
+
+.results-panel .vertical-timeline {
+  grid-column: 2 / 3;  /* 두 번째 열 */
+  grid-row: 1 / 3;     /* 첫 번째 행과 두 번째 행을 모두 차지 (세로로 확장) */
+  height: calc(100vh - 200px); /* 화면 높이에 맞게 조정 (헤더 등의 높이 고려) */
   display: flex;
   flex-direction: column;
-  gap: 2rem;
-  width: 100%;
-  max-width: 1000px;
+}
+
+/* 반응형 레이아웃을 위한 미디어 쿼리 */
+@media (max-width: 1200px) {
+  .results-panel {
+    grid-template-columns: 1fr;  /* 화면이 작을 땐 1열로 변경 */
+    grid-template-rows: auto auto auto;
+  }
+  
+  .results-panel .damage-chart,
+  .results-panel .skill-breakdown,
+  .results-panel .vertical-timeline {
+    grid-column: 1 / 2;  /* 모든 컴포넌트를 한 열에 배치 */
+  }
+  
+  .results-panel .damage-chart {
+    grid-row: 1 / 2;
+  }
+  
+  .results-panel .skill-breakdown {
+    grid-row: 2 / 3;
+  }
+  
+  .results-panel .vertical-timeline {
+    grid-row: 3 / 4;
+    height: 600px;  /* 더 작은 화면에서의 높이 */
+  }
 }
 
 /* StateViewer 스타일 */
