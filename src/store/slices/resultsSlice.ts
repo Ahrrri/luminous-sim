@@ -2,14 +2,14 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 
-interface DamageSnapshot {
+export interface DamageSnapshot {
   time: number;
   damage: number;
   skill: string;
   state: 'LIGHT' | 'DARK' | 'EQUILIBRIUM';
 }
 
-interface SkillUsage {
+export interface SkillUsage {
   skillId: string;
   count: number;
   totalDamage: number;
@@ -58,7 +58,7 @@ const resultsSlice = createSlice({
         });
       }
       
-      // DPS 업데이트
+      // DPS와 duration 업데이트
       if (action.payload.time > state.duration) {
         state.duration = action.payload.time;
         state.dps = state.totalDamage / (state.duration / 1000);

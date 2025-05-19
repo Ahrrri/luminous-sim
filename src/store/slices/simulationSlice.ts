@@ -1,13 +1,15 @@
 // src/store/slices/simulationSlice.ts
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-// import type { SimulationState } from '../../models/simulation';
 import { defaultSimulationState } from '../../models/simulation';
 import type { Buff } from '../../models/buffs';
 
 const simulationSlice = createSlice({
   name: 'simulation',
-  initialState: defaultSimulationState,
+  initialState: {
+    ...defaultSimulationState,
+    characterState: 'LIGHT' as 'LIGHT' | 'DARK' | 'EQUILIBRIUM', // 추가
+  },
   reducers: {
     startSimulation: (state) => {
       state.isRunning = true;
@@ -15,12 +17,20 @@ const simulationSlice = createSlice({
     pauseSimulation: (state) => {
       state.isRunning = false;
     },
-    resetSimulation: () => defaultSimulationState,
+    resetSimulation: (state) => {
+      return {
+        ...defaultSimulationState,
+        characterState: 'LIGHT',
+      };
+    },
     advanceTime: (state, action: PayloadAction<number>) => {
       state.currentTime += action.payload;
     },
     addDamage: (state, action: PayloadAction<number>) => {
       state.totalDamage += action.payload;
+    },
+    updateCharacterState: (state, action: PayloadAction<'LIGHT' | 'DARK' | 'EQUILIBRIUM'>) => {
+      state.characterState = action.payload;
     },
     addBuff: (state, action: PayloadAction<Buff>) => {
       state.activeBuffs.push(action.payload);
@@ -45,6 +55,7 @@ export const {
   resetSimulation,
   advanceTime,
   addDamage,
+  updateCharacterState,
   addBuff,
   removeBuff,
   setCooldown,
