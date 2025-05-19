@@ -7,7 +7,8 @@ import SimulationControls from './components/Simulator/SimulationControls';
 import StateViewer from './components/Simulator/StateViewer';
 import DamageChart from './components/Results/DamageChart';
 import SkillBreakdown from './components/Results/SkillBreakdown';
-import VerticalTimelineChart from './components/Results/VerticalTimelineChart'; // 추가
+import SimulationLog from './components/Results/SimulationLog'; // 추가
+import SimulationPlayer from './components/Results/SimulationPlayer'; // 추가
 import type { RootState } from './store';
 import { addDamageSnapshot, addBuffEvent, addStateChange } from './store/slices/resultsSlice';
 import './App.css';
@@ -16,8 +17,8 @@ function App() {
   const dispatch = useDispatch();
   const simulation = useSelector((state: RootState) => state.simulation);
   const [activeTab, setActiveTab] = useState<'settings' | 'simulator' | 'results'>('simulator');
-
-  // 이벤트 핸들러 함수 수정
+  
+  // 이벤트 핸들러 함수
   const handleDamage = (damage: number, skill: string, time: number) => {
     try {
       dispatch(addDamageSnapshot({
@@ -46,7 +47,7 @@ function App() {
       console.error("버프 변경 처리 중 오류:", error);
     }
   };
-
+  
   return (
     <div className="App">
       <header className="App-header">
@@ -100,9 +101,18 @@ function App() {
 
         {activeTab === 'results' && (
           <div className="results-panel">
-            <DamageChart />
-            <SkillBreakdown />
-            <VerticalTimelineChart />
+            <div className="results-top">
+              <SimulationPlayer />
+            </div>
+            <div className="results-grid">
+              <div className="results-column">
+                <DamageChart />
+                <SkillBreakdown />
+              </div>
+              <div className="results-column">
+                <SimulationLog />
+              </div>
+            </div>
           </div>
         )}
       </div>
