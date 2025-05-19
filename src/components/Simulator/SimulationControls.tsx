@@ -13,10 +13,10 @@ interface SimulationControlsProps {
   onBuffChange: (buffId: string, action: 'APPLIED' | 'EXPIRED', time: number) => void;
 }
 
-const SimulationControls: React.FC<SimulationControlsProps> = ({ 
-  onDamage, 
-  onStateChange, 
-  onBuffChange 
+const SimulationControls: React.FC<SimulationControlsProps> = ({
+  onDamage,
+  onStateChange,
+  onBuffChange
 }) => {
   const dispatch = useDispatch();
   const character = useSelector((state: RootState) => state.character);
@@ -24,12 +24,14 @@ const SimulationControls: React.FC<SimulationControlsProps> = ({
   const [simulationEngine, setSimulationEngine] = useState<SimulationEngine | null>(null);
   const [selectedPolicy, setSelectedPolicy] = useState<string>('basic');
   const [duration, setDuration] = useState<number>(300); // 5분 기본값
-  
-  // 시뮬레이션 시작
+
+  // handleStart 함수 수정
   const handleStart = () => {
+    console.log("시작 버튼 클릭됨");
+
     // 기존 결과 초기화
     dispatch(resetResults());
-    
+
     // 선택된 정책 생성
     let policy;
     switch (selectedPolicy) {
@@ -48,75 +50,94 @@ const SimulationControls: React.FC<SimulationControlsProps> = ({
       default:
         policy = new BasicPolicy();
     }
-    
-    // 시뮬레이션 엔진 생성 및 이벤트 리스너 설정
-    const engine = new SimulationEngine(character, simulation, policy);
-    
-    // 데미지 이벤트 리스너
-    engine.setDamageListener((damage, skill, time) => {
-      onDamage(damage, skill, time);
-    });
-    
-    // 상태 변경 이벤트 리스너
-    engine.setStateChangeListener((state, time) => {
-      onStateChange(state, time);
-    });
-    
-    // 버프 변경 이벤트 리스너
-    engine.setBuffChangeListener((buffId, action, time) => {
-      onBuffChange(buffId, action, time);
-    });
-    
-    // 엔진 저장 및 시작
-    setSimulationEngine(engine);
-    engine.startSimulation();
-    
-    // 시뮬레이션 상태 업데이트
-    dispatch(startSimulation());
-    
-    // 설정한 시간 후에 자동으로 시뮬레이션 중지
-    setTimeout(() => {
-      if (engine) {
-        engine.pauseSimulation();
+    console.log("선택된 정책:", selectedPolicy);
+
+    try {
+      // 시뮬레이션 엔진 생성
+      const characterCopy = JSON.parse(JSON.stringify(character));
+      const simulationCopy = JSON.parse(JSON.stringify(simulation));
+
+      const engine = new SimulationEngine(characterCopy, simulationCopy, policy);
+      console.log("엔진 생성됨");
+
+      // 이벤트 리스너 설정
+      engine.setDamageListener((damage, skill, time) => {
+        onDamage(damage, skill, time);
+      });
+
+      engine.setStateChangeListener((state, time) => {
+        onStateChange(state, time);
+      });
+
+      engine.setBuffChangeListener((buffId, action, time) => {
+        onBuffChange(buffId, action, time);
+      });
+
+      // 진행 상황 리스너 추가
+      engine.setProgressListener((progress, currentTime, totalDamage) => {
+        // 진행 상황 업데이트 (선택 사항)
+        console.log(`진행 상황: ${(progress * 100).toFixed(1)}%, 시간: ${currentTime / 1000}초, 데미지: ${totalDamage}`);
+      });
+
+      // 완료 리스너 추가
+      engine.setCompleteListener((totalDamage, duration) => {
+        console.log(`시뮬레이션 완료: 총 데미지 ${totalDamage}, 지속 시간 ${duration / 1000}초`);
+        // 시뮬레이션 상태 업데이트
         dispatch(pauseSimulation());
-      }
-    }, duration * 1000);
+      });
+
+      // 엔진 저장
+      setSimulationEngine(engine);
+
+      // 시뮬레이션 상태 업데이트
+      dispatch(startSimulation());
+
+      // 시뮬레이션 시작 (지속 시간 설정)
+      engine.startSimulation(duration);
+      console.log(`${duration}초 시뮬레이션 시작됨`);
+
+    } catch (error) {
+      console.error("시뮬레이션 시작 오류:", error);
+      // 에러 발생 시 상태 초기화
+      dispatch(pauseSimulation());
+    }
   };
-  
-  // 시뮬레이션 일시정지
+
+  // handlePause 함수 수정
   const handlePause = () => {
     if (simulationEngine) {
       simulationEngine.pauseSimulation();
       dispatch(pauseSimulation());
     }
   };
-  
-  // 시뮬레이션 재개
+
+  // handleResume 함수 수정
   const handleResume = () => {
     if (simulationEngine) {
-      simulationEngine.startSimulation();
+      simulationEngine.resumeSimulation(duration);
       dispatch(startSimulation());
     }
   };
-  
-  // 시뮬레이션 리셋
+
+  // handleReset 함수 수정
   const handleReset = () => {
     if (simulationEngine) {
       simulationEngine.stopSimulation();
+      simulationEngine.terminate(); // Worker 종료
     }
-    
+
     setSimulationEngine(null);
     dispatch(resetSimulation());
     dispatch(resetResults());
   };
-  
+
   return (
     <div className="simulation-controls">
       <h2>시뮬레이션 설정</h2>
-      
+
       <div className="policy-selector">
         <label htmlFor="policy-select">딜링 전략:</label>
-        <select 
+        <select
           id="policy-select"
           value={selectedPolicy}
           onChange={(e) => setSelectedPolicy(e.target.value)}
@@ -129,10 +150,10 @@ const SimulationControls: React.FC<SimulationControlsProps> = ({
           <option value="realistic">현실적 플레이어 시뮬레이션</option>
         </select>
       </div>
-      
+
       <div className="control-buttons">
         {!simulation.isRunning ? (
-          <button 
+          <button
             className="start-button"
             onClick={handleStart}
             disabled={simulationEngine !== null && simulation.isRunning}
@@ -140,24 +161,24 @@ const SimulationControls: React.FC<SimulationControlsProps> = ({
             시작
           </button>
         ) : (
-          <button 
+          <button
             className="pause-button"
             onClick={handlePause}
           >
             일시정지
           </button>
         )}
-        
+
         {simulationEngine !== null && !simulation.isRunning && (
-          <button 
+          <button
             className="resume-button"
             onClick={handleResume}
           >
             재개
           </button>
         )}
-        
-        <button 
+
+        <button
           className="reset-button"
           onClick={handleReset}
           disabled={simulationEngine === null}
@@ -165,12 +186,12 @@ const SimulationControls: React.FC<SimulationControlsProps> = ({
           초기화
         </button>
       </div>
-      
+
       <div className="simulation-duration">
         <label htmlFor="duration-input">시뮬레이션 시간 (초):</label>
-        <input 
+        <input
           id="duration-input"
-          type="number" 
+          type="number"
           min="10"
           max="600"
           value={duration}

@@ -19,7 +19,8 @@ const DamageChart: React.FC = () => {
   
   // 데이터 변환: 시간별 누적 데미지
   const cumulativeData = damageTimeline.reduce((acc: any[], snapshot, index) => {
-    const prevCumulative = index > 0 ? acc[index - 1].cumulativeDamage : 0;
+    // 이전 누적 데미지 가져오기
+    const prevCumulative = acc.length > 0 ? acc[acc.length - 1].cumulativeDamage : 0;
     const cumulativeDamage = prevCumulative + snapshot.damage;
     
     // 1초 단위로 데이터 샘플링 (30 틱 = 0.9초)

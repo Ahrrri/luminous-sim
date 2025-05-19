@@ -2,13 +2,29 @@
 import React from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../store';
-import { resetSimulation } from '../../store/slices/simulationSlice';
+import { updateSimulation, resetSimulation } from '../../store/slices/simulationSlice';
 
-// 일단 간단한 설정만 포함
 const SimulationSettings: React.FC = () => {
   const dispatch = useDispatch();
   const simulation = useSelector((state: RootState) => state.simulation);
   
+  // 체크박스 상태 변경 핸들러
+  const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    dispatch(updateSimulation({ [name]: checked }));
+  };
+  
+  // 숫자 입력 핸들러
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    const numValue = parseFloat(value);
+    
+    if (!isNaN(numValue)) {
+      dispatch(updateSimulation({ [name]: numValue }));
+    }
+  };
+  
+  // 초기화 핸들러
   const handleReset = () => {
     dispatch(resetSimulation());
   };
@@ -23,9 +39,10 @@ const SimulationSettings: React.FC = () => {
           <label>
             <input 
               type="checkbox" 
+              name="serverLagEnabled"
               checked={simulation.serverLagEnabled}
+              onChange={handleCheckboxChange}
               disabled={simulation.isRunning}
-              // 실제 애플리케이션에서는 여기에 이벤트 핸들러 추가
             />
             서버렉 시뮬레이션 활성화
           </label>
@@ -36,12 +53,13 @@ const SimulationSettings: React.FC = () => {
           <input 
             type="range" 
             id="serverLagProbability" 
+            name="serverLagProbability"
             min="0" 
             max="1" 
             step="0.1" 
             value={simulation.serverLagProbability}
+            onChange={handleNumberChange}
             disabled={simulation.isRunning || !simulation.serverLagEnabled}
-            // 실제 애플리케이션에서는 여기에 이벤트 핸들러 추가
           />
           <span>{(simulation.serverLagProbability * 100).toFixed(0)}%</span>
         </div>
@@ -51,12 +69,13 @@ const SimulationSettings: React.FC = () => {
           <input 
             type="number" 
             id="serverLagDuration" 
+            name="serverLagDuration"
             min="0" 
             max="5000" 
             step="100" 
             value={simulation.serverLagDuration}
+            onChange={handleNumberChange}
             disabled={simulation.isRunning || !simulation.serverLagEnabled}
-            // 실제 애플리케이션에서는 여기에 이벤트 핸들러 추가
           />
         </div>
         
@@ -65,9 +84,10 @@ const SimulationSettings: React.FC = () => {
           <label>
             <input 
               type="checkbox" 
+              name="applyOneHitPerTarget"
               checked={simulation.applyOneHitPerTarget}
+              onChange={handleCheckboxChange}
               disabled={simulation.isRunning}
-              // 실제 애플리케이션에서는 여기에 이벤트 핸들러 추가
             />
             한 적당 최대 한 번 충돌 적용
           </label>
@@ -77,9 +97,10 @@ const SimulationSettings: React.FC = () => {
           <label>
             <input 
               type="checkbox" 
+              name="simulateBossOnly"
               checked={simulation.simulateBossOnly}
+              onChange={handleCheckboxChange}
               disabled={simulation.isRunning}
-              // 실제 애플리케이션에서는 여기에 이벤트 핸들러 추가
             />
             보스 전투만 시뮬레이션
           </label>

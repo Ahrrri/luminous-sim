@@ -2,13 +2,15 @@
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { defaultSimulationState } from '../../models/simulation';
+// SimulationState 타입 import 추가
+import type { SimulationState } from '../../models/simulation';
 import type { Buff } from '../../models/buffs';
 
 const simulationSlice = createSlice({
   name: 'simulation',
   initialState: {
     ...defaultSimulationState,
-    characterState: 'LIGHT' as 'LIGHT' | 'DARK' | 'EQUILIBRIUM', // 추가
+    characterState: 'LIGHT' as 'LIGHT' | 'DARK' | 'EQUILIBRIUM',
   },
   reducers: {
     startSimulation: (state) => {
@@ -46,6 +48,10 @@ const simulationSlice = createSlice({
         state.cooldowns[key] = Math.max(0, state.cooldowns[key] - action.payload);
       });
     },
+    // 새로운 리듀서 추가
+    updateSimulation: (state, action: PayloadAction<Partial<SimulationState>>) => {
+      return { ...state, ...action.payload };
+    },
   },
 });
 
@@ -60,6 +66,7 @@ export const {
   removeBuff,
   setCooldown,
   updateCooldowns,
+  updateSimulation, // 새로운 액션 내보내기
 } = simulationSlice.actions;
 
 export default simulationSlice.reducer;
