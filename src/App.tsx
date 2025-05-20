@@ -12,6 +12,7 @@ import SimulationPlayer from './components/Results/SimulationPlayer'; // 추가
 import type { RootState } from './store';
 import { addDamageSnapshot, addBuffEvent, addStateChange } from './store/slices/resultsSlice';
 import './App.css';
+import PracticeMode from './components/Practice/PracticeMode';
 
 function App() {
   const dispatch = useDispatch();
