@@ -7,7 +7,7 @@ import KeyBindingPanel from './KeyBindingPanel';
 import { addDamageSnapshot, addBuffEvent, addStateChange } from '../../store/slices/resultsSlice';
 import { skills } from '../../models/skills';
 import { buffs } from '../../models/buffs';
-import { calculateCooldown, formatTime } from '../../utils/helpers';
+import { calculateCooldown, formatTime, formatTimeWithMs } from '../../utils/helpers';
 import './practice.css';
 
 // 타입 임포트
@@ -120,7 +120,7 @@ const PracticeMode: React.FC = () => {
     if (!canUseSkill(skillId)) return;
     
     const skill = skills[skillId];
-    
+    console.log(skill);
     // 스킬 딜레이만큼 게임 시간 진행
     const timeAdvance = skill.delay;
     
@@ -713,7 +713,7 @@ const PracticeMode: React.FC = () => {
           </button>
         </div>
         <div className="practice-info">
-          <div>게임 시간: {formatTime(gameTime)}</div>
+          <div>게임 시간: {formatTimeWithMs(gameTime)}</div>
           <div>총 데미지: {localSimulation.totalDamage.toLocaleString()}</div>
           <div>DPS: {calculateDPS().toLocaleString()}</div>
         </div>
