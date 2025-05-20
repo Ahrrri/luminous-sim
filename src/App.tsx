@@ -16,8 +16,8 @@ import './App.css';
 function App() {
   const dispatch = useDispatch();
   const simulation = useSelector((state: RootState) => state.simulation);
-  const [activeTab, setActiveTab] = useState<'settings' | 'simulator' | 'results'>('simulator');
-  
+  const [activeTab, setActiveTab] = useState<'settings' | 'simulator' | 'practice' | 'results'>('simulator');
+
   // 이벤트 핸들러 함수
   const handleDamage = (damage: number, skill: string, time: number) => {
     try {
@@ -47,7 +47,7 @@ function App() {
       console.error("버프 변경 처리 중 오류:", error);
     }
   };
-  
+
   return (
     <div className="App">
       <header className="App-header">
@@ -64,6 +64,12 @@ function App() {
             onClick={() => setActiveTab('simulator')}
           >
             시뮬레이터
+          </button>
+          <button
+            className={activeTab === 'practice' ? 'active' : ''}
+            onClick={() => setActiveTab('practice')}
+          >
+            실전 연습
           </button>
           <button
             className={activeTab === 'results' ? 'active' : ''}
@@ -113,6 +119,12 @@ function App() {
                 <SimulationLog />
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'practice' && (
+          <div className="practice-panel">
+            <PracticeMode />
           </div>
         )}
       </div>

@@ -1,4 +1,5 @@
 // src/components/Results/SimulationPlayer.tsx
+
 import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
@@ -14,9 +15,12 @@ const SimulationPlayer: React.FC = () => {
   const [currentTime, setCurrentTime] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(1);
   const [timelineWidth, setTimelineWidth] = useState(1000);
+
+  // refs
   const timelineRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number | null>(null);
   const lastFrameTimeRef = useRef<number | null>(null);
+  const currentTimeRef = useRef<number>(0); // 추가: 현재 시간을 ref로 관리
 
   // 모든 이벤트 시간을 합쳐서 최대 시간 찾기
   const allEvents = [
@@ -44,7 +48,12 @@ const SimulationPlayer: React.FC = () => {
     };
   }, []);
 
-  // 애니메이션 프레임 핸들러
+  // currentTime 상태가 변경될 때마다 ref 업데이트
+  useEffect(() => {
+    currentTimeRef.current = currentTime;
+  }, [currentTime]);
+
+  // 애니메이션 프레임 핸들러 - 수정됨
   const animationStep = (timestamp: number) => {
     if (lastFrameTimeRef.current === null) {
       lastFrameTimeRef.current = timestamp;
@@ -55,8 +64,8 @@ const SimulationPlayer: React.FC = () => {
     const deltaTime = timestamp - lastFrameTimeRef.current;
     lastFrameTimeRef.current = timestamp;
 
-    // 현재 시간 업데이트 (재생 속도 적용)
-    let newTime = currentTime + deltaTime * playbackSpeed;
+    // ref를 사용하여 현재 시간 업데이트
+    let newTime = currentTimeRef.current + deltaTime * playbackSpeed;
 
     // 끝에 도달하면 재생 중지
     if (newTime >= maxTime) {
@@ -64,7 +73,9 @@ const SimulationPlayer: React.FC = () => {
       setIsPlaying(false);
     }
 
+    // 상태와 ref 모두 업데이트
     setCurrentTime(newTime);
+    currentTimeRef.current = newTime;
 
     if (isPlaying && newTime < maxTime) {
       animationRef.current = requestAnimationFrame(animationStep);
@@ -98,11 +109,14 @@ const SimulationPlayer: React.FC = () => {
 
   const restart = () => {
     setCurrentTime(0);
+    currentTimeRef.current = 0; // ref도 함께 초기화
     setIsPlaying(true);
   };
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCurrentTime(parseInt(e.target.value));
+    const newTime = parseInt(e.target.value);
+    setCurrentTime(newTime);
+    currentTimeRef.current = newTime; // ref도 함께 업데이트
   };
 
   const handleSpeedChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
