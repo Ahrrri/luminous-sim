@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { skills } from '../../models/skills';
 import './practice.css';
 
+// src/components/Practice/KeyBindingPanel.tsx 수정
 interface KeyBinding {
   skillId: string;
   key: string;
@@ -11,7 +12,7 @@ interface KeyBinding {
 
 interface KeyBindingPanelProps {
   keyBindings: KeyBinding[];
-  onUpdateBinding: (skillId: string, newKey: string) => void;
+  onUpdateBinding: (skillId: string, newKey: string, displayKey: string) => void; // 인자 3개로 수정
   isRunning: boolean;
 }
 
@@ -48,22 +49,54 @@ const KeyBindingPanel: React.FC<KeyBindingPanelProps> = ({
     setEditingSkillId(skillId);
   };
   
-  // 키 입력 핸들러
-  const handleKeyDown = (e: React.KeyboardEvent, skillId: string) => {
-    e.preventDefault();
+// src/components/Practice/KeyBindingPanel.tsx에서 handleKeyDown 함수 수정
+const handleKeyDown = (e: React.KeyboardEvent, skillId: string) => {
+  e.preventDefault();
+  
+  // ESC 키는 편집 취소
+  if (e.key === 'Escape') {
+    setEditingSkillId(null);
+    return;
+  }
+  
+  // 수정자 키 감지
+  const modifiers = [];
+  if (e.ctrlKey) modifiers.push('Ctrl');
+  if (e.shiftKey) modifiers.push('Shift');
+  if (e.altKey) modifiers.push('Alt');
+  
+  // 유효한 키 입력만 처리
+  if (e.key.length === 1 || 
+      ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 
+       'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Enter', 'Space', 
+       'Backspace', 'Delete', 'Home', 'End', 'PageUp', 'PageDown'].includes(e.key)) {
     
-    // ESC 키는 편집 취소
-    if (e.key === 'Escape') {
-      setEditingSkillId(null);
-      return;
+    // 표시용 키 이름
+    let displayKey = e.key;
+    
+    // 특수 키 이름 가독성 향상
+    if (e.key === ' ' || e.key === 'Space') displayKey = 'Space';
+    if (e.key === 'ArrowUp') displayKey = '↑';
+    if (e.key === 'ArrowDown') displayKey = '↓';
+    if (e.key === 'ArrowLeft') displayKey = '←';
+    if (e.key === 'ArrowRight') displayKey = '→';
+    
+    // 키 이름과 실제 코드
+    let keyName = e.key;
+    let displayName = modifiers.length > 0 ? modifiers.join('+') + '+' + displayKey : displayKey;
+    
+    // 대문자로 변환 (표시용)
+    if (displayKey.length === 1) {
+      displayName = modifiers.length > 0 ? modifiers.join('+') + '+' + displayKey.toUpperCase() : displayKey.toUpperCase();
     }
     
-    // 유효한 키 입력만 처리
-    if (e.key.length === 1 || ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12'].includes(e.key)) {
-      onUpdateBinding(skillId, e.key);
-      setEditingSkillId(null);
-    }
-  };
+    const keyCode = modifiers.length > 0 ? modifiers.join('+').toLowerCase() + '+' + keyName.toLowerCase() : keyName.toLowerCase();
+    const displayKeyText = modifiers.length > 0 ? modifiers.join('+') + '+' + displayKey : displayKey.length === 1 ? displayKey.toUpperCase() : displayKey;
+    
+    onUpdateBinding(skillId, keyCode, displayKeyText);
+    setEditingSkillId(null);
+  }
+};
   
   // 키 바인딩 충돌 체크
   const hasConflict = (skillId: string): boolean => {
