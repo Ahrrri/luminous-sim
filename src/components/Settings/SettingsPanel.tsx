@@ -1,14 +1,14 @@
-// src/components/Settings/EnhancedSettingsPanel.tsx
+// src/components/Settings/SettingsPanel.tsx
 import React, { useState } from 'react';
-import { EnhancedCharacterSettings } from './EnhancedCharacterSettings';
+import { CharacterSettings } from './CharacterSettings';
 import { SkillEnhancementSettings } from './SkillEnhancementSettings';
 import { SimulationSettings } from './SimulationSettings';
 import { SkillInfoPanel } from './SkillInfoPanel';
 import { LUMINOUS_SKILLS } from '../../data/skills';
 import type { CharacterStats, BossStats, SkillEnhancement, GameSettings } from '../../data/types/characterTypes';
-import './EnhancedSettingsPanel.css';
+import './SettingsPanel.css';
 
-export const EnhancedSettingsPanel: React.FC = () => {
+export const SettingsPanel: React.FC = () => {
   // 기본값들
   const [characterStats, setCharacterStats] = useState<CharacterStats>({
     int: 10000,
@@ -94,7 +94,7 @@ export const EnhancedSettingsPanel: React.FC = () => {
   };
 
   return (
-    <div className="enhanced-settings-panel">
+    <div className="-settings-panel">
       <div className="settings-header">
         <h1>⚙️ 캐릭터 설정</h1>
         <div className="settings-actions">
@@ -115,7 +115,7 @@ export const EnhancedSettingsPanel: React.FC = () => {
 
       <div className="settings-layout">
         <div className="settings-left">
-          <EnhancedCharacterSettings
+          <CharacterSettings
             characterStats={characterStats}
             bossStats={bossStats}
             onCharacterStatsChange={setCharacterStats}

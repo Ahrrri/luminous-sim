@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { ECSProvider } from './hooks/ECSProvider';
 import { Layout } from './components/Layout/Layout';
-import { EnhancedSettingsPanel } from './components/Settings/EnhancedSettingsPanel';
+import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { AutoSimulationPanel } from './components/AutoSimulation/AutoSimulationPanel';
 import { ManualPracticePanel } from './components/ManualPractice/ManualPracticePanel';
 import { ResultsPanel } from './components/Results/ResultsPanel';
@@ -16,7 +16,7 @@ function App() {
   const renderContent = () => {
     switch (activeTab) {
       case 'settings':
-        return <EnhancedSettingsPanel />;
+        return <SettingsPanel />;
       case 'auto':
         return <AutoSimulationPanel />;
       case 'manual':

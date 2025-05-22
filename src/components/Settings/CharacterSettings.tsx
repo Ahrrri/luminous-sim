@@ -1,18 +1,18 @@
-// src/components/Settings/EnhancedCharacterSettings.tsx
+// src/components/Settings/CharacterSettings.tsx
 import React, { useState } from 'react';
 import { SettingsCard } from './SettingsCard';
 import { InputField } from './InputField';
 import { SelectField } from './SelectField';
 import type { CharacterStats, BossStats } from '../../data/types/characterTypes';
 
-interface EnhancedCharacterSettingsProps {
+interface CharacterSettingsProps {
   characterStats: CharacterStats;
   bossStats: BossStats;
   onCharacterStatsChange: (stats: CharacterStats) => void;
   onBossStatsChange: (stats: BossStats) => void;
 }
 
-export const EnhancedCharacterSettings: React.FC<EnhancedCharacterSettingsProps> = ({
+export const CharacterSettings: React.FC<CharacterSettingsProps> = ({
   characterStats,
   bossStats,
   onCharacterStatsChange,
@@ -59,7 +59,7 @@ export const EnhancedCharacterSettings: React.FC<EnhancedCharacterSettingsProps>
   };
 
   return (
-    <div className="enhanced-character-settings">
+    <div className="-character-settings">
       <SettingsCard title="캐릭터 기본 스펙" icon="👤">
         <div className="settings-section">
           <h3>기본 스탯</h3>
