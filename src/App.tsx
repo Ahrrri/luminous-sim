@@ -3,8 +3,8 @@ import React, { useState } from 'react';
 import { Layout } from './components/Layout/Layout';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { AutoSimulationPanel } from './components/AutoSimulation/AutoSimulationPanel';
-// import { ManualPracticePanel } from './components/ManualPractice/ManualPracticePanel';
-// import { ResultsPanel } from './components/Results/ResultsPanel';
+import { ManualPracticePanel } from './components/ManualPractice/ManualPracticePanel';
+import { ResultsPanel } from './components/Results/ResultsPanel';
 import './App.css';
 
 type TabType = 'settings' | 'auto' | 'manual' | 'results';
@@ -19,11 +19,9 @@ function App() {
       case 'auto':
         return <AutoSimulationPanel />;
       case 'manual':
-        // return <ManualPracticePanel />;
-        return <AutoSimulationPanel />;        
+        return <ManualPracticePanel />;
       case 'results':
-        // return <ResultsPanel />;
-        return <AutoSimulationPanel />;
+        return <ResultsPanel />;
       default:
         return <AutoSimulationPanel />;
     }

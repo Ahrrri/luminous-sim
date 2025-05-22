@@ -1,0 +1,712 @@
+/* src/components/ManualPractice/ManualPracticePanel.css */
+.manual-practice-panel {
+    width: 100%;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .practice-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .practice-header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #2d3748;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .practice-timer {
+    font-size: 1.5rem;
+    font-weight: 600;
+    font-family: 'Courier New', monospace;
+    color: #4a5568;
+    background: rgba(102, 126, 234, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+  }
+  
+  .practice-content {
+    display: grid;
+    grid-template-columns: 400px 1fr;
+    gap: 1.5rem;
+    min-height: 600px;
+  }
+  
+  .left-panel,
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  /* 반응형 디자인 */
+  @media (max-width: 1200px) {
+    .practice-content {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .practice-header {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+    
+    .practice-header h1 {
+      font-size: 1.5rem;
+    }
+    
+    .practice-timer {
+      font-size: 1.25rem;
+    }
+  }
+  
+  /* Practice Controls 스타일 */
+  .practice-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 1.5rem 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .control-buttons {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .control-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .control-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .control-button.start {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+  }
+  
+  .control-button.pause {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: white;
+  }
+  
+  .control-button.reset {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    color: white;
+  }
+  
+  .button-icon {
+    font-size: 1.2rem;
+  }
+  
+  .practice-status {
+    display: flex;
+    align-items: center;
+  }
+  
+  .status-indicator {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+  
+  .status-indicator.running {
+    background: rgba(16, 185, 129, 0.1);
+    color: #059669;
+    border: 2px solid rgba(16, 185, 129, 0.2);
+  }
+  
+  .status-indicator.stopped {
+    background: rgba(107, 114, 128, 0.1);
+    color: #4b5563;
+    border: 2px solid rgba(107, 114, 128, 0.2);
+  }
+
+  /* CharacterStatusViewer 스타일 추가 (ManualPracticePanel.css에 포함) */
+.character-status-viewer {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    height: fit-content;
+  }
+  
+  .character-status-viewer h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+  }
+  
+  .current-state {
+    margin-bottom: 1.5rem;
+  }
+  
+  .state-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+  
+  .state-label {
+    font-weight: 500;
+    color: #4a5568;
+  }
+  
+  .state-value {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1.1rem;
+  }
+  
+  .state-value.state-light {
+    background: rgba(255, 193, 7, 0.2);
+    color: #b26a00;
+    border: 2px solid rgba(255, 193, 7, 0.3);
+  }
+  
+  .state-value.state-dark {
+    background: rgba(126, 87, 194, 0.2);
+    color: #4527a0;
+    border: 2px solid rgba(126, 87, 194, 0.3);
+  }
+  
+  .state-value.state-equilibrium {
+    background: rgba(66, 165, 245, 0.2);
+    color: #01579b;
+    border: 2px solid rgba(66, 165, 245, 0.3);
+  }
+  
+  .equilibrium-timer {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .gauge-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .gauge-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  .gauge-label {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 0.875rem;
+  }
+  
+  .gauge-bar {
+    height: 12px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .gauge-fill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.3s ease;
+  }
+  
+  .gauge-fill.light {
+    background: linear-gradient(90deg, #ffc107, #ff9800);
+  }
+  
+  .gauge-fill.dark {
+    background: linear-gradient(90deg, #7e57c2, #5e35b1);
+  }
+  
+  .gauge-value {
+    font-size: 0.875rem;
+    color: #6b7280;
+    font-family: 'Courier New', monospace;
+    text-align: right;
+  }
+  
+  .damage-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: rgba(102, 126, 234, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+  }
+  
+  .damage-label {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 0.875rem;
+  }
+  
+  .damage-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #2d3748;
+    font-family: 'Courier New', monospace;
+  }
+  
+  .active-buffs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .buffs-label {
+    font-weight: 500;
+    color: #4a5568;
+    font-size: 0.875rem;
+  }
+  
+  .buffs-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .buff-chip {
+    padding: 0.25rem 0.75rem;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border-radius: 16px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .no-buffs {
+    color: #9ca3af;
+    font-style: italic;
+    font-size: 0.875rem;
+  }
+
+  /* SkillBar 스타일 추가 (ManualPracticePanel.css에 포함) */
+.skill-bar {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex: 1;
+  }
+  
+  .skill-bar h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+  }
+  
+  .skill-groups {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .skill-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .group-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 8px;
+    text-align: center;
+  }
+  
+  .group-title.light {
+    background: rgba(255, 193, 7, 0.2);
+    color: #b26a00;
+    border: 2px solid rgba(255, 193, 7, 0.3);
+  }
+  
+  .group-title.dark {
+    background: rgba(126, 87, 194, 0.2);
+    color: #4527a0;
+    border: 2px solid rgba(126, 87, 194, 0.3);
+  }
+  
+  .group-title.equilibrium {
+    background: rgba(66, 165, 245, 0.2);
+    color: #01579b;
+    border: 2px solid rgba(66, 165, 245, 0.3);
+  }
+  
+  .group-title.buff {
+    background: rgba(16, 185, 129, 0.2);
+    color: #059669;
+    border: 2px solid rgba(16, 185, 129, 0.3);
+  }
+  
+  .skill-icons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  
+  .skill-icon {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .skill-icon:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  }
+  
+  .skill-icon.light {
+    background: rgba(255, 193, 7, 0.1);
+    border: 2px solid rgba(255, 193, 7, 0.3);
+  }
+  
+  .skill-icon.dark {
+    background: rgba(126, 87, 194, 0.1);
+    border: 2px solid rgba(126, 87, 194, 0.3);
+  }
+  
+  .skill-icon.equilibrium {
+    background: rgba(66, 165, 245, 0.1);
+    border: 2px solid rgba(66, 165, 245, 0.3);
+  }
+  
+  .skill-icon.buff {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid rgba(16, 185, 129, 0.3);
+  }
+  
+  .skill-icon.usable {
+    cursor: pointer;
+  }
+  
+  .skill-icon.usable:hover {
+    transform: translateY(-2px) scale(1.05);
+  }
+  
+  .skill-icon.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .skill-icon.disabled:hover {
+    transform: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
+  
+  .skill-icon-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 0.5rem;
+    position: relative;
+    z-index: 2;
+  }
+  
+  .skill-emoji {
+    font-size: 1.5rem;
+    margin-bottom: 0.25rem;
+  }
+  
+  .skill-name {
+    font-size: 0.65rem;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.2;
+    color: #2d3748;
+    margin-bottom: 0.25rem;
+  }
+  
+  .key-binding {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding: 0.2rem 0.4rem;
+    border-radius: 4px;
+    line-height: 1;
+  }
+  
+  .cooldown-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3;
+  }
+  
+  .cooldown-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(244, 67, 54, 0.4);
+    transition: height 0.1s ease;
+  }
+  
+  .cooldown-text {
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+    z-index: 4;
+  }
+
+  /* KeyBindingPanel 스타일 추가 (ManualPracticePanel.css에 포함) */
+.key-binding-panel {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+  }
+  
+  .panel-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2d3748;
+    margin: 0;
+  }
+  
+  .toggle-button {
+    padding: 0.5rem 1rem;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
+    border: 2px solid rgba(102, 126, 234, 0.2);
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .toggle-button:hover {
+    background: rgba(102, 126, 234, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .binding-content {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .warning-message {
+    padding: 1rem;
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400e;
+    border: 2px solid rgba(245, 158, 11, 0.2);
+    border-radius: 8px;
+    font-weight: 500;
+    text-align: center;
+  }
+  
+  .binding-groups {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .binding-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  
+  .binding-group .group-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    text-align: center;
+  }
+  
+  .binding-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 8px;
+    border: 2px solid transparent;
+    transition: all 0.2s ease;
+  }
+  
+  .binding-item:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  .binding-item.conflict {
+    border-color: rgba(244, 67, 54, 0.3);
+    background: rgba(244, 67, 54, 0.05);
+  }
+  
+  .skill-name {
+    font-weight: 500;
+    color: #2d3748;
+    font-size: 0.875rem;
+  }
+  
+  .key-display {
+    min-width: 40px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(107, 114, 128, 0.1);
+    border: 2px solid rgba(107, 114, 128, 0.2);
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .key-display:hover {
+    background: rgba(107, 114, 128, 0.2);
+    transform: translateY(-1px);
+  }
+  
+  .key-display.editing {
+    background: rgba(66, 165, 245, 0.2);
+    border-color: rgba(66, 165, 245, 0.4);
+    color: #01579b;
+    animation: pulse 1s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+  
+  .conflict-warning {
+    font-size: 0.75rem;
+    color: #dc2626;
+    font-weight: 500;
+    margin-top: 0.25rem;
+  }
+  
+  .binding-help {
+    padding: 1rem;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid #3b82f6;
+  }
+  
+  .binding-help p {
+    margin: 0.5rem 0;
+    font-size: 0.875rem;
+    color: #4b5563;
+    line-height: 1.4;
+  }
+  
+  .binding-help p:first-child {
+    margin-top: 0;
+  }
+  
+  .binding-help p:last-child {
+    margin-bottom: 0;
+  }
+  
+  /* 반응형 디자인 */
+  @media (max-width: 768px) {
+    .skill-icons {
+      justify-content: center;
+    }
+    
+    .skill-icon {
+      width: 70px;
+      height: 70px;
+    }
+    
+    .binding-groups {
+      grid-template-columns: 1fr;
+    }
+    
+    .panel-header {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+  }

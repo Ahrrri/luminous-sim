@@ -2,7 +2,7 @@
 import React from 'react';
 import './Layout.css';
 
-type TabType = 'settings' | 'simulator' | 'practice' | 'results';
+type TabType = 'settings' | 'auto' | 'manual' | 'results';
 
 interface LayoutProps {
     activeTab: TabType;
