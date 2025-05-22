@@ -283,7 +283,7 @@
     font-weight: 600;
   }
   
-  .skill-bar {
+  .results-panel .skill-bar {
     height: 8px;
     background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;

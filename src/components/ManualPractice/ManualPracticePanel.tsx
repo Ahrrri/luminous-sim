@@ -40,10 +40,10 @@ export const ManualPracticePanel: React.FC = () => {
   // ECS 훅들 사용
   const character = useLuminousCharacter();
   const { useSkill } = useSkillActions(character?.entity || null);
-  
+
   // 컴포넌트들 개별 접근
   const stateComp = useComponent<StateComponent>(character?.entity || null, 'state');
-  const gaugeComp = useComponent<GaugeComponent>(character?.entity || null, 'gauge');  
+  const gaugeComp = useComponent<GaugeComponent>(character?.entity || null, 'gauge');
   const skillComp = useComponent<SkillComponent>(character?.entity || null, 'skill');
   const damageComp = useComponent<DamageComponent>(character?.entity || null, 'damage');
   const timeComp = useComponent<TimeComponent>(character?.entity || null, 'time');
@@ -53,7 +53,7 @@ export const ManualPracticePanel: React.FC = () => {
   const [isRunning, setIsRunning] = useState(false);
   const gameLoopRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
-  
+
   const [keyBindings, setKeyBindings] = useState<KeyBinding[]>([
     { skillId: 'reflection', key: 'q', displayKey: 'Q' },
     { skillId: 'apocalypse', key: 'w', displayKey: 'W' },
@@ -111,7 +111,7 @@ export const ManualPracticePanel: React.FC = () => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const keyCombo = e.key.toLowerCase();
       const binding = keyBindings.find(kb => kb.key === keyCombo);
-      
+
       if (binding) {
         const skillDef = SKILLS.find(s => s.id === binding.skillId);
         if (skillDef) {
@@ -130,12 +130,12 @@ export const ManualPracticePanel: React.FC = () => {
     setIsRunning(true);
     console.log('🎮 연습 모드 시작');
   };
-  
+
   const handlePause = () => {
     setIsRunning(false);
     console.log('⏸️ 연습 모드 일시정지');
   };
-  
+
   const handleReset = () => {
     setIsRunning(false);
     if (timeComp) {
@@ -156,10 +156,10 @@ export const ManualPracticePanel: React.FC = () => {
   };
 
   const updateKeyBinding = (skillId: string, newKey: string) => {
-    setKeyBindings(prev => 
-      prev.map(kb => 
-        kb.skillId === skillId 
-          ? { ...kb, key: newKey, displayKey: newKey.toUpperCase() } 
+    setKeyBindings(prev =>
+      prev.map(kb =>
+        kb.skillId === skillId
+          ? { ...kb, key: newKey, displayKey: newKey.toUpperCase() }
           : kb
       )
     );
@@ -178,7 +178,7 @@ export const ManualPracticePanel: React.FC = () => {
   };
 
   return (
-    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+    <div className="manual-practice-panel" style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
         <h1>🎮 Manual Practice</h1>
         <div style={{ fontSize: '1.2rem', fontFamily: 'monospace', fontWeight: 'bold' }}>
@@ -193,25 +193,15 @@ export const ManualPracticePanel: React.FC = () => {
         onReset={handleReset}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '2rem', marginBottom: '2rem' }}>
-        <CharacterStatusViewer 
-          character={{
-            currentState: stateComp.currentState,
-            lightGauge: gaugeComp.lightGauge,
-            darkGauge: gaugeComp.darkGauge,
-            totalDamage: damageComp?.totalDamage || 0,
-            activeBuffs: buffComp?.getAllBuffs().map(buff => buff.name) || [],
-            equilibriumTimeLeft: stateComp.equilibriumEndTime ? 
-              Math.max(0, stateComp.equilibriumEndTime - timeComp.currentTime) / 1000 : undefined
-          }}
-        />
-        
-        <SkillBar 
+      <div className="practice-content">
+        <CharacterStatusViewer entity={character.entity} />
+
+        <SkillBar
           skills={SKILLS.map(skill => ({
             id: skill.id,
             name: skill.name,
             icon: skill.icon,
-            cooldown: (skillComp?.getSkill(skill.id)?.cooldown || 0) / 1000, // ms를 초로 변환
+            cooldown: (skillComp?.getSkill(skill.id)?.cooldown || 0) / 1000,
             maxCooldown: skill.cooldown / 1000,
             keyBinding: keyBindings.find(kb => kb.skillId === skill.id)?.displayKey || '',
             element: skill.element,
@@ -220,18 +210,18 @@ export const ManualPracticePanel: React.FC = () => {
           onSkillUse={handleSkillUse}
           isRunning={isRunning}
         />
-      </div>
 
-      <KeyBindingPanel 
-        skills={SKILLS.map(skill => ({
-          id: skill.id,
-          name: skill.name,
-          keyBinding: keyBindings.find(kb => kb.skillId === skill.id)?.displayKey || '',
-          element: skill.element
-        }))}
-        onUpdateBinding={updateKeyBinding}
-        isRunning={isRunning}
-      />
+        <KeyBindingPanel
+          skills={SKILLS.map(skill => ({
+            id: skill.id,
+            name: skill.name,
+            keyBinding: keyBindings.find(kb => kb.skillId === skill.id)?.displayKey || '',
+            element: skill.element
+          }))}
+          onUpdateBinding={updateKeyBinding}
+          isRunning={isRunning}
+        />
+      </div>
     </div>
   );
 };

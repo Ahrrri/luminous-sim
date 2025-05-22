@@ -1,4 +1,4 @@
-// src/components/ManualPractice/SkillBar.tsx
+// src/components/ManualPractice/SkillBar.tsx - 실제 버전
 import React from 'react';
 
 interface SkillData {
@@ -43,35 +43,33 @@ export const SkillBar: React.FC<SkillBarProps> = ({
 
   const SkillIcon: React.FC<{ skill: SkillData }> = ({ skill }) => {
     const canUse = !skill.disabled && skill.cooldown <= 0 && isRunning;
+    const elementClass = skill.element === 'NONE' ? 'buff' : skill.element.toLowerCase();
     
     return (
       <div 
-        className={`skill-icon ${skill.element.toLowerCase()} ${canUse ? 'usable' : 'disabled'}`}
+        className={`skill-icon ${elementClass} ${canUse ? 'usable' : 'disabled'}`}
         onClick={() => canUse && onSkillUse(skill.id)}
-        title={skill.name}
+        title={`${skill.name} (${skill.keyBinding})`}
       >
         <div className="skill-icon-content">
-          {/* 실제 스킬 아이콘 이미지 사용 */}
+          {/* 스킬 아이콘 - 이미지 우선, 실패시 이모지 */}
           <img 
             src={getSkillIconUrl(skill.id)} 
             alt={skill.name}
             className="skill-image"
             onError={(e) => {
-              // 이미지 로드 실패시 폴백 - 이모지 사용
+              // 이미지 로드 실패시 이모지로 대체
               const target = e.target as HTMLImageElement;
               target.style.display = 'none';
               const parent = target.parentElement;
               if (parent && !parent.querySelector('.skill-emoji-fallback')) {
                 const fallback = document.createElement('span');
-                fallback.className = 'skill-emoji skill-emoji-fallback';
+                fallback.className = 'skill-emoji-fallback';
                 fallback.textContent = skill.icon;
                 parent.insertBefore(fallback, target);
               }
             }}
           />
-          <span className="skill-emoji" style={{ display: 'none' }}>
-            {skill.icon}
-          </span>
           
           <div className="skill-name">{skill.name}</div>
         </div>
@@ -102,41 +100,49 @@ export const SkillBar: React.FC<SkillBarProps> = ({
       <h3>스킬</h3>
       
       <div className="skill-groups">
-        <div className="skill-group">
-          <h4 className="group-title light">빛 스킬</h4>
-          <div className="skill-icons">
-            {groupedSkills.light.map(skill => (
-              <SkillIcon key={skill.id} skill={skill} />
-            ))}
+        {groupedSkills.light.length > 0 && (
+          <div className="skill-group">
+            <h4 className="group-title light">빛 스킬</h4>
+            <div className="skill-icons">
+              {groupedSkills.light.map(skill => (
+                <SkillIcon key={skill.id} skill={skill} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="skill-group">
-          <h4 className="group-title dark">어둠 스킬</h4>
-          <div className="skill-icons">
-            {groupedSkills.dark.map(skill => (
-              <SkillIcon key={skill.id} skill={skill} />
-            ))}
+        {groupedSkills.dark.length > 0 && (
+          <div className="skill-group">
+            <h4 className="group-title dark">어둠 스킬</h4>
+            <div className="skill-icons">
+              {groupedSkills.dark.map(skill => (
+                <SkillIcon key={skill.id} skill={skill} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="skill-group">
-          <h4 className="group-title equilibrium">이퀼리브리엄 스킬</h4>
-          <div className="skill-icons">
-            {groupedSkills.equilibrium.map(skill => (
-              <SkillIcon key={skill.id} skill={skill} />
-            ))}
+        {groupedSkills.equilibrium.length > 0 && (
+          <div className="skill-group">
+            <h4 className="group-title equilibrium">이퀼리브리엄 스킬</h4>
+            <div className="skill-icons">
+              {groupedSkills.equilibrium.map(skill => (
+                <SkillIcon key={skill.id} skill={skill} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
-        <div className="skill-group">
-          <h4 className="group-title buff">버프 스킬</h4>
-          <div className="skill-icons">
-            {groupedSkills.buff.map(skill => (
-              <SkillIcon key={skill.id} skill={skill} />
-            ))}
+        {groupedSkills.buff.length > 0 && (
+          <div className="skill-group">
+            <h4 className="group-title buff">버프 스킬</h4>
+            <div className="skill-icons">
+              {groupedSkills.buff.map(skill => (
+                <SkillIcon key={skill.id} skill={skill} />
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
