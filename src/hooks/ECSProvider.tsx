@@ -1,5 +1,5 @@
 // src/hooks/ECSProvider.tsx
-import React, { createContext, useEffect, useRef, useState } from 'react';
+import React, { createContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import { World } from '../ecs/core/World';
 import { 
@@ -11,19 +11,23 @@ import {
   GaugeSystem 
 } from '../ecs/systems';
 
+// ECS 컨텍스트 인터페이스 - 순수 시뮬레이션만
+interface ECSContextValue {
+  world: World;
+  step: (deltaTime: number) => void;
+}
+
 // ECSContext를 여기서 정의하고 export
-export const ECSContext = createContext<World | null>(null);
+export const ECSContext = createContext<ECSContextValue | null>(null);
 
 interface ECSProviderProps {
   children: ReactNode;
 }
 
 export const ECSProvider: React.FC<ECSProviderProps> = ({ children }) => {
-  const [world, setWorld] = useState<World | null>(null);
-  const animationRef = useRef<number | null>(null);
-  const lastTimeRef = useRef<number>(0);
+  const [contextValue, setContextValue] = useState<ECSContextValue | null>(null);
 
-  // World 초기화
+  // World 초기화 - 순수 시뮬레이션 엔진만
   useEffect(() => {
     const newWorld = new World();
     
@@ -35,48 +39,27 @@ export const ECSProvider: React.FC<ECSProviderProps> = ({ children }) => {
     newWorld.addSystem(new DamageSystem());
     newWorld.addSystem(new GaugeSystem());
     
-    setWorld(newWorld);
+    // step 함수 - 고정 시간 간격으로 시뮬레이션 진행
+    const step = (deltaTime: number) => {
+      newWorld.update(deltaTime);
+    };
+    
+    setContextValue({
+      world: newWorld,
+      step
+    });
 
     return () => {
       newWorld.clear();
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
     };
   }, []);
 
-  // 게임 루프
-  useEffect(() => {
-    if (!world) return;
-
-    const gameLoop = (currentTime: number) => {
-      const deltaTime = currentTime - lastTimeRef.current;
-      lastTimeRef.current = currentTime;
-
-      // 30ms (33.33 FPS)마다 업데이트
-      if (deltaTime >= 30) {
-        world.update(30); // 고정 타임스텝
-      }
-
-      animationRef.current = requestAnimationFrame(gameLoop);
-    };
-
-    animationRef.current = requestAnimationFrame(gameLoop);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [world]);
-
-  // world가 아직 초기화되지 않았으면 로딩 표시
-  if (!world) {
+  if (!contextValue) {
     return <div>ECS 시스템 초기화 중...</div>;
   }
 
   return (
-    <ECSContext.Provider value={world}>
+    <ECSContext.Provider value={contextValue}>
       {children}
     </ECSContext.Provider>
   );

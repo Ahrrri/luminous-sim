@@ -6,7 +6,7 @@ import type { Component } from '../ecs/core/Component';
 import type { SystemEventCallback } from '../ecs/core/World';
 
 export function useECSEvents(eventType: string, callback: SystemEventCallback): void {
-  const world = useECS();
+  const { world } = useECS();
 
   useEffect(() => {
     world.on(eventType, callback);

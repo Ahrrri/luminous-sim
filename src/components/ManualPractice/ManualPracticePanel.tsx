@@ -6,9 +6,9 @@ import { SkillBar } from './SkillBar';
 import { KeyBindingPanel } from './KeyBindingPanel';
 import { useLuminousCharacter } from '../../hooks/useLuminousCharacter';
 import { useSkillActions } from '../../hooks/useSkillActions';
-import type { SkillDefinition } from '../../hooks/useSkillActions';
+import { useECS } from '../../hooks/useECS';
 import { useECSEvents } from '../../hooks/useECSEvents';
-import { useComponent } from '../../hooks/useComponent';
+import { LUMINOUS_SKILLS, getDefaultKeyBindings } from '../../data/skills';
 import type { StateComponent } from '../../ecs/components/StateComponent';
 import type { GaugeComponent } from '../../ecs/components/GaugeComponent';
 import type { SkillComponent } from '../../ecs/components/SkillComponent';
@@ -24,64 +24,108 @@ interface KeyBinding {
   displayKey: string;
 }
 
-// 스킬 정의 데이터
-const SKILLS: SkillDefinition[] = [
-  { id: 'reflection', name: '라이트 리플렉션', icon: '☀️', element: 'LIGHT', damage: 810, hitCount: 4, maxTargets: 8, gaugeCharge: 451, cooldown: 0 },
-  { id: 'apocalypse', name: '아포칼립스', icon: '🌙', element: 'DARK', damage: 768, hitCount: 7, maxTargets: 8, gaugeCharge: 470, cooldown: 0 },
-  { id: 'absolute_kill', name: '앱솔루트 킬', icon: '⚡', element: 'EQUILIBRIUM', damage: 695, hitCount: 7, maxTargets: 3, gaugeCharge: 0, cooldown: 10000 },
-  { id: 'door_of_truth', name: '진리의 문', icon: '🚪', element: 'EQUILIBRIUM', damage: 990, hitCount: 10, maxTargets: 12, gaugeCharge: 0, cooldown: 0 },
-  { id: 'baptism', name: '빛과 어둠의 세례', icon: '✨', element: 'EQUILIBRIUM', damage: 660, hitCount: 7, maxTargets: 1, gaugeCharge: 0, cooldown: 30000 },
-  { id: 'nova', name: '트와일라잇 노바', icon: '💥', element: 'NONE', damage: 1630, hitCount: 7, maxTargets: 8, gaugeCharge: 300, cooldown: 15000 },
-  { id: 'punishing', name: '퍼니싱 리소네이터', icon: '🎵', element: 'NONE', damage: 1100, hitCount: 6, maxTargets: 10, gaugeCharge: 0, cooldown: 30000 },
-  { id: 'heroic_oath', name: '히어로즈 오쓰', icon: '🛡️', element: 'NONE', damage: 0, hitCount: 0, maxTargets: 0, gaugeCharge: 0, cooldown: 120000 },
-];
+// React에서 관리할 캐릭터 상태 (ECS 상태 미러링)
+interface CharacterDisplayState {
+  currentTime: number;
+  currentState: string;
+  lightGauge: number;
+  darkGauge: number;
+  maxGauge: number;
+  totalDamage: number;
+  equilibriumEndTime?: number;
+  activeBuffs: string[];
+  skillCooldowns: Map<string, number>;
+}
+
+// 스킬 정의 데이터 - 중앙화된 데이터 사용
+const SKILLS = LUMINOUS_SKILLS;
 
 export const ManualPracticePanel: React.FC = () => {
   // ECS 훅들 사용
+  const { world, step } = useECS();
   const character = useLuminousCharacter();
   const { useSkill } = useSkillActions(character?.entity || null);
 
-  // 컴포넌트들 개별 접근
-  const stateComp = useComponent<StateComponent>(character?.entity || null, 'state');
-  const gaugeComp = useComponent<GaugeComponent>(character?.entity || null, 'gauge');
-  const skillComp = useComponent<SkillComponent>(character?.entity || null, 'skill');
-  const damageComp = useComponent<DamageComponent>(character?.entity || null, 'damage');
-  const timeComp = useComponent<TimeComponent>(character?.entity || null, 'time');
-  const buffComp = useComponent<BuffComponent>(character?.entity || null, 'buff');
+  // React에서 관리하는 디스플레이 상태
+  const [displayState, setDisplayState] = useState<CharacterDisplayState>({
+    currentTime: 0,
+    currentState: 'LIGHT',
+    lightGauge: 0,
+    darkGauge: 0,
+    maxGauge: 10000,
+    totalDamage: 0,
+    activeBuffs: [],
+    skillCooldowns: new Map(),
+  });
 
   // 로컬 상태
   const [isRunning, setIsRunning] = useState(false);
   const gameLoopRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
+  const accumulatedTimeRef = useRef<number>(0);
 
-  const [keyBindings, setKeyBindings] = useState<KeyBinding[]>([
-    { skillId: 'reflection', key: 'q', displayKey: 'Q' },
-    { skillId: 'apocalypse', key: 'w', displayKey: 'W' },
-    { skillId: 'absolute_kill', key: 'e', displayKey: 'E' },
-    { skillId: 'door_of_truth', key: 'r', displayKey: 'R' },
-    { skillId: 'baptism', key: 'a', displayKey: 'A' },
-    { skillId: 'nova', key: 's', displayKey: 'S' },
-    { skillId: 'punishing', key: 'd', displayKey: 'D' },
-    { skillId: 'heroic_oath', key: 'z', displayKey: 'Z' },
-  ]);
+  const [keyBindings, setKeyBindings] = useState(getDefaultKeyBindings());
 
-  // 게임 루프 - 연습 모드 실행 중에만 시간 진행
+  // ECS에서 React 상태로 동기화하는 함수
+  const syncECSToReact = useCallback(() => {
+    if (!character?.entity) return;
+
+    const timeComp = world.getComponent<TimeComponent>(character.entity, 'time');
+    const stateComp = world.getComponent<StateComponent>(character.entity, 'state');
+    const gaugeComp = world.getComponent<GaugeComponent>(character.entity, 'gauge');
+    const damageComp = world.getComponent<DamageComponent>(character.entity, 'damage');
+    const buffComp = world.getComponent<BuffComponent>(character.entity, 'buff');
+    const skillComp = world.getComponent<SkillComponent>(character.entity, 'skill');
+
+    if (!timeComp || !stateComp || !gaugeComp || !damageComp) return;
+
+    // 스킬 쿨다운 맵 생성
+    const cooldowns = new Map<string, number>();
+    SKILLS.forEach(skill => {
+      const skillData = skillComp?.getSkill(skill.id);
+      if (skillData) {
+        cooldowns.set(skill.id, skillData.cooldown);
+      }
+    });
+
+    setDisplayState({
+      currentTime: timeComp.currentTime,
+      currentState: stateComp.currentState,
+      lightGauge: gaugeComp.lightGauge,
+      darkGauge: gaugeComp.darkGauge,
+      maxGauge: gaugeComp.maxGauge,
+      totalDamage: damageComp.totalDamage,
+      equilibriumEndTime: stateComp.equilibriumEndTime,
+      activeBuffs: buffComp?.getAllBuffs().map(buff => buff.name) || [],
+      skillCooldowns: cooldowns,
+    });
+  }, [world, character?.entity]);
+
+  // 실시간 게임 루프 - React가 시간 제어
   useEffect(() => {
-    if (!isRunning || !timeComp) return;
+    if (!isRunning) return;
 
     const gameLoop = (currentTime: number) => {
       const deltaTime = currentTime - lastTimeRef.current;
       lastTimeRef.current = currentTime;
+      
+      // 누적 시간 계산
+      accumulatedTimeRef.current += deltaTime;
 
-      // 30ms마다 시간 업데이트
-      if (deltaTime >= 30) {
-        timeComp.update(timeComp.currentTime + 30);
+      // 10ms마다 ECS 업데이트
+      while (accumulatedTimeRef.current >= 10) {
+        step(10); // 고정 10ms 타임스텝
+        accumulatedTimeRef.current -= 10;
       }
+
+      // ECS 상태를 React로 동기화
+      syncECSToReact();
 
       gameLoopRef.current = requestAnimationFrame(gameLoop);
     };
 
     lastTimeRef.current = performance.now();
+    accumulatedTimeRef.current = 0;
     gameLoopRef.current = requestAnimationFrame(gameLoop);
 
     return () => {
@@ -89,7 +133,7 @@ export const ManualPracticePanel: React.FC = () => {
         cancelAnimationFrame(gameLoopRef.current);
       }
     };
-  }, [isRunning, timeComp]);
+  }, [isRunning, step, syncECSToReact]);
 
   // ECS 이벤트 리스너들
   useECSEvents('damage:dealt', useCallback((_eventType, _entity, data) => {
@@ -138,12 +182,29 @@ export const ManualPracticePanel: React.FC = () => {
 
   const handleReset = () => {
     setIsRunning(false);
-    if (timeComp) {
-      timeComp.update(0);
+    
+    // ECS 상태 초기화
+    if (character?.entity) {
+      const timeComp = world.getComponent<TimeComponent>(character.entity, 'time');
+      const damageComp = world.getComponent<DamageComponent>(character.entity, 'damage');
+      const gaugeComp = world.getComponent<GaugeComponent>(character.entity, 'gauge');
+      
+      if (timeComp) {
+        timeComp.currentTime = 0;
+        timeComp.deltaTime = 0;
+      }
+      if (damageComp) {
+        damageComp.reset();
+      }
+      if (gaugeComp) {
+        gaugeComp.resetLightGauge();
+        gaugeComp.resetDarkGauge();
+      }
+      
+      // React 상태도 동기화
+      syncECSToReact();
     }
-    if (damageComp) {
-      damageComp.reset();
-    }
+    
     console.log('🔄 연습 모드 초기화');
   };
 
@@ -166,7 +227,7 @@ export const ManualPracticePanel: React.FC = () => {
   };
 
   // 로딩 체크
-  if (!character || !stateComp || !gaugeComp || !timeComp) {
+  if (!character) {
     return <div>🔄 캐릭터 로딩 중...</div>;
   }
 
@@ -177,12 +238,27 @@ export const ManualPracticePanel: React.FC = () => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   };
 
+  const getStateLabel = (state: string) => {
+    switch (state) {
+      case 'LIGHT': return '빛';
+      case 'DARK': return '어둠';
+      case 'EQUILIBRIUM': return '이퀼리브리엄';
+      default: return state;
+    }
+  };
+
+  const formatNumber = (num: number) => num.toLocaleString();
+
+  // 이퀼리브리엄 남은 시간 계산
+  const equilibriumTimeLeft = displayState.equilibriumEndTime ? 
+    Math.max(0, displayState.equilibriumEndTime - displayState.currentTime) / 1000 : undefined;
+
   return (
     <div className="manual-practice-panel" style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
       <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
         <h1>🎮 Manual Practice</h1>
         <div style={{ fontSize: '1.2rem', fontFamily: 'monospace', fontWeight: 'bold' }}>
-          시간: {formatTime(timeComp.currentTime)}
+          시간: {formatTime(displayState.currentTime)}
         </div>
       </div>
 
@@ -194,18 +270,79 @@ export const ManualPracticePanel: React.FC = () => {
       />
 
       <div className="practice-content">
-        <CharacterStatusViewer entity={character.entity} />
+        {/* 인라인 캐릭터 상태 표시 */}
+        <div className="character-status-viewer">
+          <h3>캐릭터 상태</h3>
+          
+          <div className="current-state">
+            <div className="state-info">
+              <span className="state-label">현재 상태:</span>
+              <span className={`state-value state-${displayState.currentState.toLowerCase()}`}>
+                {getStateLabel(displayState.currentState)}
+              </span>
+              {equilibriumTimeLeft && (
+                <span className="equilibrium-timer">
+                  ({equilibriumTimeLeft.toFixed(1)}초 남음)
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="gauge-container">
+            <div className="gauge-item light-gauge">
+              <div className="gauge-label">빛 게이지</div>
+              <div className="gauge-bar">
+                <div 
+                  className="gauge-fill light"
+                  style={{ width: `${(displayState.lightGauge / displayState.maxGauge) * 100}%` }}
+                />
+              </div>
+              <div className="gauge-value">{displayState.lightGauge} / {displayState.maxGauge}</div>
+            </div>
+
+            <div className="gauge-item dark-gauge">
+              <div className="gauge-label">어둠 게이지</div>
+              <div className="gauge-bar">
+                <div 
+                  className="gauge-fill dark"
+                  style={{ width: `${(displayState.darkGauge / displayState.maxGauge) * 100}%` }}
+                />
+              </div>
+              <div className="gauge-value">{displayState.darkGauge} / {displayState.maxGauge}</div>
+            </div>
+          </div>
+
+          <div className="damage-info">
+            <div className="damage-label">총 데미지</div>
+            <div className="damage-value">{formatNumber(displayState.totalDamage)}</div>
+          </div>
+
+          <div className="active-buffs">
+            <div className="buffs-label">활성 버프</div>
+            <div className="buffs-list">
+              {displayState.activeBuffs.length > 0 ? (
+                displayState.activeBuffs.map((buff, index) => (
+                  <span key={index} className="buff-chip">
+                    {buff}
+                  </span>
+                ))
+              ) : (
+                <span className="no-buffs">없음</span>
+              )}
+            </div>
+          </div>
+        </div>
 
         <SkillBar
           skills={SKILLS.map(skill => ({
             id: skill.id,
             name: skill.name,
             icon: skill.icon,
-            cooldown: (skillComp?.getSkill(skill.id)?.cooldown || 0) / 1000,
+            cooldown: (displayState.skillCooldowns.get(skill.id) || 0) / 1000,
             maxCooldown: skill.cooldown / 1000,
             keyBinding: keyBindings.find(kb => kb.skillId === skill.id)?.displayKey || '',
             element: skill.element,
-            disabled: !skillComp?.isSkillAvailable(skill.id) || false
+            disabled: (displayState.skillCooldowns.get(skill.id) || 0) > 0
           }))}
           onSkillUse={handleSkillUse}
           isRunning={isRunning}

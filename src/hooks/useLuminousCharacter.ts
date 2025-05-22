@@ -9,8 +9,9 @@ import { BuffComponent } from '../ecs/components/BuffComponent';
 import { DamageComponent } from '../ecs/components/DamageComponent';
 import { TimeComponent } from '../ecs/components/TimeComponent';
 import { StatsComponent } from '../ecs/components/StatsComponent';
+import { LUMINOUS_SKILLS } from '../data/skills';
 import type { CharacterStats } from '../ecs/components/StatsComponent';
-import type { SkillData } from '../ecs/components/SkillComponent';
+import type { SkillData as ECSSkillData } from '../ecs/components/SkillComponent';
 
 interface LuminousCharacterData {
   entity: Entity;
@@ -23,20 +24,19 @@ interface LuminousCharacterData {
   stats: StatsComponent;
 }
 
-// 기본 스킬 데이터 정의
-const DEFAULT_SKILLS: SkillData[] = [
-  { id: 'reflection', name: '라이트 리플렉션', cooldown: 0, maxCooldown: 0, isAvailable: true },
-  { id: 'apocalypse', name: '아포칼립스', cooldown: 0, maxCooldown: 0, isAvailable: true },
-  { id: 'absolute_kill', name: '앱솔루트 킬', cooldown: 0, maxCooldown: 10000, isAvailable: true },
-  { id: 'door_of_truth', name: '진리의 문', cooldown: 0, maxCooldown: 0, isAvailable: true },
-  { id: 'baptism', name: '빛과 어둠의 세례', cooldown: 0, maxCooldown: 30000, isAvailable: true },
-  { id: 'nova', name: '트와일라잇 노바', cooldown: 0, maxCooldown: 15000, isAvailable: true },
-  { id: 'punishing', name: '퍼니싱 리소네이터', cooldown: 0, maxCooldown: 30000, isAvailable: true },
-  { id: 'heroic_oath', name: '히어로즈 오쓰', cooldown: 0, maxCooldown: 120000, isAvailable: true },
-];
+// 중앙화된 스킬 데이터를 ECS 스킬 데이터로 변환
+const convertToECSSkillData = (): ECSSkillData[] => {
+  return LUMINOUS_SKILLS.map(skill => ({
+    id: skill.id,
+    name: skill.name,
+    cooldown: 0,
+    maxCooldown: skill.cooldown,
+    isAvailable: true
+  }));
+};
 
 export function useLuminousCharacter(characterStats?: CharacterStats): LuminousCharacterData | null {
-  const world = useECS();
+  const { world } = useECS();
   const [character, setCharacter] = useState<LuminousCharacterData | null>(null);
 
   useEffect(() => {
@@ -46,7 +46,7 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
     // 기본 컴포넌트들 추가
     const stateComp = new StateComponent();
     const gaugeComp = new GaugeComponent();
-    const skillComp = new SkillComponent(DEFAULT_SKILLS); // 기본 스킬들 추가
+    const skillComp = new SkillComponent(convertToECSSkillData()); // 중앙화된 스킬 데이터 사용
     const buffComp = new BuffComponent();
     const damageComp = new DamageComponent();
     const timeComp = new TimeComponent();

@@ -5,23 +5,12 @@ import type { Entity } from '../ecs/core/Entity';
 import { SkillSystem } from '../ecs/systems/SkillSystem';
 import { DamageSystem } from '../ecs/systems/DamageSystem';
 import { GaugeSystem } from '../ecs/systems/GaugeSystem';
-
-export interface SkillDefinition {
-  id: string;
-  name: string;
-  icon: string;
-  element: 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'NONE';
-  damage: number;
-  hitCount: number;
-  maxTargets: number;
-  gaugeCharge: number;
-  cooldown: number;
-}
+import type { SkillData } from '../data/types/skillTypes';
 
 export function useSkillActions(entity: Entity | null) {
-  const world = useECS();
+  const { world } = useECS();
 
-  const useSkill = useCallback((skillDef: SkillDefinition) => {
+  const useSkill = useCallback((skillDef: SkillData) => {
     if (!entity) return false;
 
     // 시스템들 가져오기

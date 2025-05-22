@@ -8,7 +8,7 @@ export function useComponent<T extends Component>(
   entity: Entity | null, 
   componentType: string
 ): T | null {
-  const world = useECS();
+  const { world } = useECS();
   const [component, setComponent] = useState<T | null>(null);
 
   useEffect(() => {

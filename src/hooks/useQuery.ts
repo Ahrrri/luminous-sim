@@ -5,7 +5,7 @@ import type { Entity } from '../ecs/core/Entity';
 import type { Component } from '../ecs/core/Component';
 
 export function useQuery(componentTypes: string[]): Entity[] {
-  const world = useECS();
+  const { world } = useECS();
   const [entities, setEntities] = useState<Entity[]>([]);
 
   useEffect(() => {
