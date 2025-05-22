@@ -1,10 +1,10 @@
 // src/store/slices/simulationSlice.ts
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import { defaultSimulationState } from '../../models/simulation';
+import { defaultSimulationState } from '../../legacy/models/simulation';
 // SimulationState 타입 import 추가
-import type { SimulationState } from '../../models/simulation';
-import type { Buff } from '../../models/buffs';
+import type { SimulationState } from '../../legacy/models/simulation';
+import type { Buff } from '../../legacy/models/buffs';
 
 const simulationSlice = createSlice({
   name: 'simulation',

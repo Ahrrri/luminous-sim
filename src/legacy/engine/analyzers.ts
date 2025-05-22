@@ -1,6 +1,6 @@
 // src/engine/analyzers.ts
 // 시뮬레이션 결과 분석
-import type { DamageSnapshot } from '../store/slices/resultsSlice';
+import type { DamageSnapshot } from '../../store/slices/resultsSlice';
 
 export interface AnalysisResult {
   totalDamage: number;

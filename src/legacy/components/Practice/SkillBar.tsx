@@ -1,8 +1,8 @@
 // src/components/Practice/SkillBar.tsx
 import React from 'react';
 import { formatTime } from '../../utils/helpers';
-import type { Skill } from '../../models/skills';
-import type { CharacterState } from '../../models/character';
+import type { Skill } from '../../legacy/models/skills';
+import type { CharacterState } from '../../legacy/models/character';
 import './practice.css';
 
 interface KeyBinding {

@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { formatNumber, formatTime } from '../../utils/helpers';
-import { skills } from '../../models/skills';
+import { skills } from '../../legacy/models/skills';
 import './verticalTimeline.css';
 
 const VerticalTimelineChart: React.FC = () => {

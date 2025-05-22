@@ -3,7 +3,7 @@ import type { CharacterState } from '../models/character';
 import type { SimulationState } from '../models/simulation';
 import { skills } from '../models/skills';
 import type { SkillSelectionPolicy } from './simulator';
-import { canUseSkill } from '../utils/skillUtils';
+import { canUseSkill } from '../../utils/skillUtils';
 
 // 기본 전략: 쿨이 돌면 바로 사용
 export class BasicPolicy implements SkillSelectionPolicy {

@@ -1,8 +1,8 @@
 // src/workers/simulation.worker.ts
-import type { CharacterState } from '../models/character';
-import type { SimulationState } from '../models/simulation';
-import { skills } from '../models/skills';
-import { buffs } from '../models/buffs';
+import type { CharacterState } from '../legacy/models/character';
+import type { SimulationState } from '../legacy/models/simulation';
+import { skills } from '../legacy/models/skills';
+import { buffs } from '../legacy/models/buffs';
 import { calculateCooldown } from '../utils/helpers';
 import { canUseSkill as checkSkillUsable } from '../utils/skillUtils';
 

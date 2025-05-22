@@ -1,8 +1,8 @@
 // src/store/slices/characterSlice.ts
 import { createSlice } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
-import type { CharacterState } from '../../models/character';
-import { defaultCharacterState } from '../../models/character';
+import type { CharacterState } from '../../legacy/models/character';
+import { defaultCharacterState } from '../../legacy/models/character';
 
 const characterSlice = createSlice({
   name: 'character',

@@ -4,9 +4,9 @@ import { useDispatch, useSelector } from 'react-redux';
 import type { RootState } from '../../store';
 import { startSimulation, pauseSimulation, resetSimulation } from '../../store/slices/simulationSlice';
 import { resetResults } from '../../store/slices/resultsSlice';
-import { SimulationEngine } from '../../engine/simulator';
+import { SimulationEngine } from '../../legacy/engine/simulator';
 // import { BasicPolicy, EquilibriumPriorityPolicy, BurstCyclePolicy, ContinuousRingPolicy, RealisticPlayerPolicy } from '../../engine/policies';
-import { BasicPolicy } from '../../engine/policies';
+import { BasicPolicy } from '../../legacy/engine/policies';
 
 interface SimulationControlsProps {
   onDamage: (damage: number, skill: string, time: number) => void;

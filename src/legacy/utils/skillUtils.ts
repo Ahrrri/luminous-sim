@@ -1,7 +1,7 @@
 // src/utils/skillUtils.ts
-import type { CharacterState } from '../models/character';
-import type { SimulationState } from '../models/simulation';
-import { skills } from '../models/skills';
+import type { CharacterState } from '../legacy/models/character';
+import type { SimulationState } from '../legacy/models/simulation';
+import { skills } from '../legacy/models/skills';
 
 /**
  * 스킬 사용 가능 여부를 확인하는 공통 유틸리티 함수

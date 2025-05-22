@@ -1,6 +1,6 @@
 // src/components/Practice/KeyBindingPanel.tsx
 import React, { useState } from 'react';
-import { skills } from '../../models/skills';
+import { skills } from '../../legacy/models/skills';
 import './practice.css';
 
 // src/components/Practice/KeyBindingPanel.tsx 수정

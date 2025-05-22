@@ -5,16 +5,16 @@ import type { RootState } from '../../store';
 import SkillBar from './SkillBar';
 import KeyBindingPanel from './KeyBindingPanel';
 import { addDamageSnapshot, addBuffEvent, addStateChange } from '../../store/slices/resultsSlice';
-import { skills } from '../../models/skills';
-import { buffs } from '../../models/buffs';
+import { skills } from '../../legacy/models/skills';
+import { buffs } from '../../legacy/models/buffs';
 import { calculateCooldown, formatTime, formatTimeWithMs } from '../../utils/helpers';
 import './practice.css';
 
 // 타입 임포트
-import type { CharacterState } from '../../models/character';
-import type { SimulationState } from '../../models/simulation';
-import type { Skill } from '../../models/skills';
-import type { Buff } from '../../models/buffs';
+import type { CharacterState } from '../../legacy/models/character';
+import type { SimulationState } from '../../legacy/models/simulation';
+import type { Skill } from '../../legacy/models/skills';
+import type { Buff } from '../../legacy/models/buffs';
 
 // 키 바인딩 타입 정의
 interface KeyBinding {
