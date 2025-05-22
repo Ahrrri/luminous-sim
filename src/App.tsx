@@ -1,5 +1,6 @@
-// src/App.tsx 수정
-import React, { useState } from 'react';
+// src/App.tsx
+import { useState } from 'react';
+import { ECSProvider } from './hooks/ECSProvider';
 import { Layout } from './components/Layout/Layout';
 import { SettingsPanel } from './components/Settings/SettingsPanel';
 import { AutoSimulationPanel } from './components/AutoSimulation/AutoSimulationPanel';
@@ -10,7 +11,7 @@ import './App.css';
 type TabType = 'settings' | 'auto' | 'manual' | 'results';
 
 function App() {
-  const [activeTab, setActiveTab] = useState<TabType>('auto');
+  const [activeTab, setActiveTab] = useState<TabType>('manual'); // manual부터 시작해서 테스트
 
   const renderContent = () => {
     switch (activeTab) {
@@ -23,18 +24,20 @@ function App() {
       case 'results':
         return <ResultsPanel />;
       default:
-        return <AutoSimulationPanel />;
+        return <ManualPracticePanel />;
     }
   };
 
   return (
     <div className="app">
-      <Layout
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-      >
-        {renderContent()}
-      </Layout>
+      <ECSProvider>
+        <Layout
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+        >
+          {renderContent()}
+        </Layout>
+      </ECSProvider>
     </div>
   );
 }

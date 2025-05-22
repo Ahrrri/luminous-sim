@@ -1,5 +1,5 @@
 // src/hooks/ECSProvider.tsx
-import React, { createContext, useEffect, useRef } from 'react';
+import React, { createContext, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { World } from '../ecs/core/World';
 import { 
@@ -19,30 +19,26 @@ interface ECSProviderProps {
 }
 
 export const ECSProvider: React.FC<ECSProviderProps> = ({ children }) => {
-  const worldRef = useRef<World | null>(null);
+  const [world, setWorld] = useState<World | null>(null);
   const animationRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number>(0);
 
   // World 초기화
   useEffect(() => {
-    if (!worldRef.current) {
-      const world = new World();
-      
-      // 시스템들 등록
-      world.addSystem(new TimeSystem());
-      world.addSystem(new StateSystem());
-      world.addSystem(new SkillSystem());
-      world.addSystem(new BuffSystem());
-      world.addSystem(new DamageSystem());
-      world.addSystem(new GaugeSystem());
-      
-      worldRef.current = world;
-    }
+    const newWorld = new World();
+    
+    // 시스템들 등록
+    newWorld.addSystem(new TimeSystem());
+    newWorld.addSystem(new StateSystem());
+    newWorld.addSystem(new SkillSystem());
+    newWorld.addSystem(new BuffSystem());
+    newWorld.addSystem(new DamageSystem());
+    newWorld.addSystem(new GaugeSystem());
+    
+    setWorld(newWorld);
 
     return () => {
-      if (worldRef.current) {
-        worldRef.current.clear();
-      }
+      newWorld.clear();
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -51,15 +47,15 @@ export const ECSProvider: React.FC<ECSProviderProps> = ({ children }) => {
 
   // 게임 루프
   useEffect(() => {
-    const gameLoop = (currentTime: number) => {
-      if (!worldRef.current) return;
+    if (!world) return;
 
+    const gameLoop = (currentTime: number) => {
       const deltaTime = currentTime - lastTimeRef.current;
       lastTimeRef.current = currentTime;
 
       // 30ms (33.33 FPS)마다 업데이트
       if (deltaTime >= 30) {
-        worldRef.current.update(30); // 고정 타임스텝
+        world.update(30); // 고정 타임스텝
       }
 
       animationRef.current = requestAnimationFrame(gameLoop);
@@ -72,10 +68,15 @@ export const ECSProvider: React.FC<ECSProviderProps> = ({ children }) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, []);
+  }, [world]);
+
+  // world가 아직 초기화되지 않았으면 로딩 표시
+  if (!world) {
+    return <div>ECS 시스템 초기화 중...</div>;
+  }
 
   return (
-    <ECSContext.Provider value={worldRef.current}>
+    <ECSContext.Provider value={world}>
       {children}
     </ECSContext.Provider>
   );

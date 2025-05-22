@@ -5,7 +5,7 @@ interface MockSkill {
   id: string;
   name: string;
   keyBinding: string;
-  element: 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'BUFF';
+  element: 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'NONE';
 }
 
 interface KeyBindingPanelProps {
@@ -45,7 +45,7 @@ export const KeyBindingPanel: React.FC<KeyBindingPanelProps> = ({
     light: skills.filter(skill => skill.element === 'LIGHT'),
     dark: skills.filter(skill => skill.element === 'DARK'),
     equilibrium: skills.filter(skill => skill.element === 'EQUILIBRIUM'),
-    buff: skills.filter(skill => skill.element === 'BUFF'),
+    buff: skills.filter(skill => skill.element === 'NONE'),
   };
 
   return (

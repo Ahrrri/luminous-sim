@@ -1,19 +1,19 @@
 // src/components/ManualPractice/SkillBar.tsx
 import React from 'react';
 
-interface MockSkill {
+interface SkillData {
   id: string;
   name: string;
   icon: string;
   cooldown: number;
   maxCooldown: number;
   keyBinding: string;
-  element: 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'BUFF';
+  element: 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'NONE';
   disabled: boolean;
 }
 
 interface SkillBarProps {
-  skills: MockSkill[];
+  skills: SkillData[];
   onSkillUse: (skillId: string) => void;
   isRunning: boolean;
 }
@@ -27,7 +27,7 @@ export const SkillBar: React.FC<SkillBarProps> = ({
     light: skills.filter(skill => skill.element === 'LIGHT'),
     dark: skills.filter(skill => skill.element === 'DARK'),
     equilibrium: skills.filter(skill => skill.element === 'EQUILIBRIUM'),
-    buff: skills.filter(skill => skill.element === 'BUFF'),
+    buff: skills.filter(skill => skill.element === 'NONE'),
   };
 
   const formatCooldown = (cooldown: number) => {
@@ -36,7 +36,12 @@ export const SkillBar: React.FC<SkillBarProps> = ({
     return Math.ceil(cooldown).toString();
   };
 
-  const SkillIcon: React.FC<{ skill: MockSkill }> = ({ skill }) => {
+  // 스킬 아이콘 이미지 URL 생성
+  const getSkillIconUrl = (skillId: string): string => {
+    return `/skill-icons/${skillId.toLowerCase()}.png`;
+  };
+
+  const SkillIcon: React.FC<{ skill: SkillData }> = ({ skill }) => {
     const canUse = !skill.disabled && skill.cooldown <= 0 && isRunning;
     
     return (
@@ -46,11 +51,35 @@ export const SkillBar: React.FC<SkillBarProps> = ({
         title={skill.name}
       >
         <div className="skill-icon-content">
-          <span className="skill-emoji">{skill.icon}</span>
+          {/* 실제 스킬 아이콘 이미지 사용 */}
+          <img 
+            src={getSkillIconUrl(skill.id)} 
+            alt={skill.name}
+            className="skill-image"
+            onError={(e) => {
+              // 이미지 로드 실패시 폴백 - 이모지 사용
+              const target = e.target as HTMLImageElement;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent && !parent.querySelector('.skill-emoji-fallback')) {
+                const fallback = document.createElement('span');
+                fallback.className = 'skill-emoji skill-emoji-fallback';
+                fallback.textContent = skill.icon;
+                parent.insertBefore(fallback, target);
+              }
+            }}
+          />
+          <span className="skill-emoji" style={{ display: 'none' }}>
+            {skill.icon}
+          </span>
+          
           <div className="skill-name">{skill.name}</div>
-          <div className="key-binding">{skill.keyBinding}</div>
         </div>
         
+        {/* 키 바인딩 표시 */}
+        <div className="key-binding">{skill.keyBinding}</div>
+        
+        {/* 쿨다운 오버레이 */}
         {skill.cooldown > 0 && (
           <div className="cooldown-overlay">
             <div 

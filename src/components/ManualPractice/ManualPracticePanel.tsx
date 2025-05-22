@@ -1,79 +1,188 @@
 // src/components/ManualPractice/ManualPracticePanel.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { PracticeControls } from './PracticeControls';
 import { CharacterStatusViewer } from './CharacterStatusViewer';
 import { SkillBar } from './SkillBar';
 import { KeyBindingPanel } from './KeyBindingPanel';
+import { useLuminousCharacter } from '../../hooks/useLuminousCharacter';
+import { useSkillActions } from '../../hooks/useSkillActions';
+import type { SkillDefinition } from '../../hooks/useSkillActions';
+import { useECSEvents } from '../../hooks/useECSEvents';
+import { useComponent } from '../../hooks/useComponent';
+import type { StateComponent } from '../../ecs/components/StateComponent';
+import type { GaugeComponent } from '../../ecs/components/GaugeComponent';
+import type { SkillComponent } from '../../ecs/components/SkillComponent';
+import type { DamageComponent } from '../../ecs/components/DamageComponent';
+import type { TimeComponent } from '../../ecs/components/TimeComponent';
+import type { BuffComponent } from '../../ecs/components/BuffComponent';
 import './ManualPracticePanel.css';
 
-// Mock 데이터 타입들
-interface MockCharacterState {
-  currentState: 'LIGHT' | 'DARK' | 'EQUILIBRIUM';
-  lightGauge: number;
-  darkGauge: number;
-  totalDamage: number;
-  activeBuffs: string[];
-  equilibriumTimeLeft?: number;
+// 키 바인딩 타입
+interface KeyBinding {
+  skillId: string;
+  key: string;
+  displayKey: string;
 }
 
-interface MockSkill {
-  id: string;
-  name: string;
-  icon: string;
-  cooldown: number;
-  maxCooldown: number;
-  keyBinding: string;
-  element: 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'BUFF';
-  disabled: boolean;
-}
+// 스킬 정의 데이터
+const SKILLS: SkillDefinition[] = [
+  { id: 'reflection', name: '라이트 리플렉션', icon: '☀️', element: 'LIGHT', damage: 810, hitCount: 4, maxTargets: 8, gaugeCharge: 451, cooldown: 0 },
+  { id: 'apocalypse', name: '아포칼립스', icon: '🌙', element: 'DARK', damage: 768, hitCount: 7, maxTargets: 8, gaugeCharge: 470, cooldown: 0 },
+  { id: 'absolute_kill', name: '앱솔루트 킬', icon: '⚡', element: 'EQUILIBRIUM', damage: 695, hitCount: 7, maxTargets: 3, gaugeCharge: 0, cooldown: 10000 },
+  { id: 'door_of_truth', name: '진리의 문', icon: '🚪', element: 'EQUILIBRIUM', damage: 990, hitCount: 10, maxTargets: 12, gaugeCharge: 0, cooldown: 0 },
+  { id: 'baptism', name: '빛과 어둠의 세례', icon: '✨', element: 'EQUILIBRIUM', damage: 660, hitCount: 7, maxTargets: 1, gaugeCharge: 0, cooldown: 30000 },
+  { id: 'nova', name: '트와일라잇 노바', icon: '💥', element: 'NONE', damage: 1630, hitCount: 7, maxTargets: 8, gaugeCharge: 300, cooldown: 15000 },
+  { id: 'punishing', name: '퍼니싱 리소네이터', icon: '🎵', element: 'NONE', damage: 1100, hitCount: 6, maxTargets: 10, gaugeCharge: 0, cooldown: 30000 },
+  { id: 'heroic_oath', name: '히어로즈 오쓰', icon: '🛡️', element: 'NONE', damage: 0, hitCount: 0, maxTargets: 0, gaugeCharge: 0, cooldown: 120000 },
+];
 
 export const ManualPracticePanel: React.FC = () => {
-  // Mock 상태들
-  const [isRunning, setIsRunning] = useState(false);
-  const [gameTime, setGameTime] = useState(0);
-  const [character, setCharacter] = useState<MockCharacterState>({
-    currentState: 'LIGHT',
-    lightGauge: 3000,
-    darkGauge: 7500,
-    totalDamage: 1234567890,
-    activeBuffs: ['오쓰', '메용2', '컨티'],
-  });
+  // ECS 훅들 사용
+  const character = useLuminousCharacter();
+  const { useSkill } = useSkillActions(character?.entity || null);
+  
+  // 컴포넌트들 개별 접근
+  const stateComp = useComponent<StateComponent>(character?.entity || null, 'state');
+  const gaugeComp = useComponent<GaugeComponent>(character?.entity || null, 'gauge');  
+  const skillComp = useComponent<SkillComponent>(character?.entity || null, 'skill');
+  const damageComp = useComponent<DamageComponent>(character?.entity || null, 'damage');
+  const timeComp = useComponent<TimeComponent>(character?.entity || null, 'time');
+  const buffComp = useComponent<BuffComponent>(character?.entity || null, 'buff');
 
-  const [skills, setSkills] = useState<MockSkill[]>([
-    { id: 'reflection', name: '라이트 리플렉션', icon: '☀️', cooldown: 0, maxCooldown: 0, keyBinding: 'Q', element: 'LIGHT', disabled: false },
-    { id: 'apocalypse', name: '아포칼립스', icon: '🌙', cooldown: 0, maxCooldown: 0, keyBinding: 'W', element: 'DARK', disabled: false },
-    { id: 'absolute_kill', name: '앱솔루트 킬', icon: '⚡', cooldown: 2.5, maxCooldown: 10, keyBinding: 'E', element: 'EQUILIBRIUM', disabled: true },
-    { id: 'door_of_truth', name: '진리의 문', icon: '🚪', cooldown: 0, maxCooldown: 0, keyBinding: 'R', element: 'EQUILIBRIUM', disabled: true },
-    { id: 'baptism', name: '빛과 어둠의 세례', icon: '✨', cooldown: 15.2, maxCooldown: 30, keyBinding: 'A', element: 'EQUILIBRIUM', disabled: false },
-    { id: 'nova', name: '트와일라잇 노바', icon: '💥', cooldown: 0, maxCooldown: 15, keyBinding: 'S', element: 'EQUILIBRIUM', disabled: false },
-    { id: 'punishing', name: '퍼니싱 리소네이터', icon: '🎵', cooldown: 8.7, maxCooldown: 30, keyBinding: 'D', element: 'EQUILIBRIUM', disabled: false },
-    { id: 'heroic_oath', name: '히어로즈 오쓰', icon: '🛡️', cooldown: 0, maxCooldown: 120, keyBinding: 'Z', element: 'BUFF', disabled: false },
+  // 로컬 상태
+  const [isRunning, setIsRunning] = useState(false);
+  const gameLoopRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number>(0);
+  
+  const [keyBindings, setKeyBindings] = useState<KeyBinding[]>([
+    { skillId: 'reflection', key: 'q', displayKey: 'Q' },
+    { skillId: 'apocalypse', key: 'w', displayKey: 'W' },
+    { skillId: 'absolute_kill', key: 'e', displayKey: 'E' },
+    { skillId: 'door_of_truth', key: 'r', displayKey: 'R' },
+    { skillId: 'baptism', key: 'a', displayKey: 'A' },
+    { skillId: 'nova', key: 's', displayKey: 'S' },
+    { skillId: 'punishing', key: 'd', displayKey: 'D' },
+    { skillId: 'heroic_oath', key: 'z', displayKey: 'Z' },
   ]);
 
-  const handleStart = () => setIsRunning(true);
-  const handlePause = () => setIsRunning(false);
+  // 게임 루프 - 연습 모드 실행 중에만 시간 진행
+  useEffect(() => {
+    if (!isRunning || !timeComp) return;
+
+    const gameLoop = (currentTime: number) => {
+      const deltaTime = currentTime - lastTimeRef.current;
+      lastTimeRef.current = currentTime;
+
+      // 30ms마다 시간 업데이트
+      if (deltaTime >= 30) {
+        timeComp.update(timeComp.currentTime + 30);
+      }
+
+      gameLoopRef.current = requestAnimationFrame(gameLoop);
+    };
+
+    lastTimeRef.current = performance.now();
+    gameLoopRef.current = requestAnimationFrame(gameLoop);
+
+    return () => {
+      if (gameLoopRef.current) {
+        cancelAnimationFrame(gameLoopRef.current);
+      }
+    };
+  }, [isRunning, timeComp]);
+
+  // ECS 이벤트 리스너들
+  useECSEvents('damage:dealt', useCallback((_eventType, _entity, data) => {
+    console.log('💥 데미지 발생:', data);
+  }, []));
+
+  useECSEvents('state:entered_equilibrium', useCallback((_eventType, _entity, _data) => {
+    console.log('⚖️ 이퀼리브리엄 진입');
+  }, []));
+
+  useECSEvents('gauge:charged', useCallback((_eventType, _entity, data) => {
+    console.log('⚡ 게이지 충전:', data);
+  }, []));
+
+  // 키보드 이벤트 처리
+  useEffect(() => {
+    if (!isRunning) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const keyCombo = e.key.toLowerCase();
+      const binding = keyBindings.find(kb => kb.key === keyCombo);
+      
+      if (binding) {
+        const skillDef = SKILLS.find(s => s.id === binding.skillId);
+        if (skillDef) {
+          useSkill(skillDef);
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isRunning, keyBindings, useSkill]);
+
+  // 컨트롤 핸들러들
+  const handleStart = () => {
+    setIsRunning(true);
+    console.log('🎮 연습 모드 시작');
+  };
+  
+  const handlePause = () => {
+    setIsRunning(false);
+    console.log('⏸️ 연습 모드 일시정지');
+  };
+  
   const handleReset = () => {
     setIsRunning(false);
-    setGameTime(0);
+    if (timeComp) {
+      timeComp.update(0);
+    }
+    if (damageComp) {
+      damageComp.reset();
+    }
+    console.log('🔄 연습 모드 초기화');
   };
 
   const handleSkillUse = (skillId: string) => {
     if (!isRunning) return;
-    console.log(`스킬 사용: ${skillId}`);
-    // Mock: 스킬 쿨타임 설정
-    setSkills(prev => prev.map(skill => 
-      skill.id === skillId 
-        ? { ...skill, cooldown: skill.maxCooldown }
-        : skill
-    ));
+    const skillDef = SKILLS.find(s => s.id === skillId);
+    if (skillDef) {
+      useSkill(skillDef);
+    }
+  };
+
+  const updateKeyBinding = (skillId: string, newKey: string) => {
+    setKeyBindings(prev => 
+      prev.map(kb => 
+        kb.skillId === skillId 
+          ? { ...kb, key: newKey, displayKey: newKey.toUpperCase() } 
+          : kb
+      )
+    );
+  };
+
+  // 로딩 체크
+  if (!character || !stateComp || !gaugeComp || !timeComp) {
+    return <div>🔄 캐릭터 로딩 중...</div>;
+  }
+
+  const formatTime = (ms: number) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    const milliseconds = Math.floor(ms % 1000);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
   };
 
   return (
-    <div className="manual-practice-panel">
-      <div className="practice-header">
+    <div style={{ padding: '2rem', maxWidth: '1400px', margin: '0 auto' }}>
+      <div style={{ marginBottom: '2rem', textAlign: 'center' }}>
         <h1>🎮 Manual Practice</h1>
-        <div className="practice-timer">
-          시간: {Math.floor(gameTime / 60000)}:{String(Math.floor((gameTime % 60000) / 1000)).padStart(2, '0')}.{String(gameTime % 1000).padStart(3, '0')}
+        <div style={{ fontSize: '1.2rem', fontFamily: 'monospace', fontWeight: 'bold' }}>
+          시간: {formatTime(timeComp.currentTime)}
         </div>
       </div>
 
@@ -84,27 +193,43 @@ export const ManualPracticePanel: React.FC = () => {
         onReset={handleReset}
       />
 
-      <div className="practice-content">
-        <div className="left-panel">
-          <CharacterStatusViewer character={character} />
-        </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '400px 1fr', gap: '2rem', marginBottom: '2rem' }}>
+        <CharacterStatusViewer 
+          character={{
+            currentState: stateComp.currentState,
+            lightGauge: gaugeComp.lightGauge,
+            darkGauge: gaugeComp.darkGauge,
+            totalDamage: damageComp?.totalDamage || 0,
+            activeBuffs: buffComp?.getAllBuffs().map(buff => buff.name) || [],
+            equilibriumTimeLeft: stateComp.equilibriumEndTime ? 
+              Math.max(0, stateComp.equilibriumEndTime - timeComp.currentTime) / 1000 : undefined
+          }}
+        />
         
-        <div className="right-panel">
-          <SkillBar 
-            skills={skills}
-            onSkillUse={handleSkillUse}
-            isRunning={isRunning}
-          />
-        </div>
+        <SkillBar 
+          skills={SKILLS.map(skill => ({
+            id: skill.id,
+            name: skill.name,
+            icon: skill.icon,
+            cooldown: (skillComp?.getSkill(skill.id)?.cooldown || 0) / 1000, // ms를 초로 변환
+            maxCooldown: skill.cooldown / 1000,
+            keyBinding: keyBindings.find(kb => kb.skillId === skill.id)?.displayKey || '',
+            element: skill.element,
+            disabled: !skillComp?.isSkillAvailable(skill.id) || false
+          }))}
+          onSkillUse={handleSkillUse}
+          isRunning={isRunning}
+        />
       </div>
 
       <KeyBindingPanel 
-        skills={skills}
-        onUpdateBinding={(skillId, newKey) => {
-          setSkills(prev => prev.map(skill =>
-            skill.id === skillId ? { ...skill, keyBinding: newKey } : skill
-          ));
-        }}
+        skills={SKILLS.map(skill => ({
+          id: skill.id,
+          name: skill.name,
+          keyBinding: keyBindings.find(kb => kb.skillId === skill.id)?.displayKey || '',
+          element: skill.element
+        }))}
+        onUpdateBinding={updateKeyBinding}
         isRunning={isRunning}
       />
     </div>
