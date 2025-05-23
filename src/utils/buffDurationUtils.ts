@@ -18,14 +18,14 @@ export const calculateBuffDuration = (
   
   /**
    * 이퀼리브리엄 지속시간 계산
-   * 기본 17초 + 다크라이트 마스터리 7초 = 24초
+   * 기본 10초 + 다크라이트 마스터리 7초 = 17초
    * 여기에 버프 지속시간 증가 적용
    */
   export const calculateEquilibriumDuration = (
     buffDurationIncrease: number,
     isMemorize: boolean = false
   ): number => {
-    const baseDuration = 17000; // 17초
+    const baseDuration = 10000; // 10초
     const darkLightMasteryBonus = 7000; // 7초
     
     // 메모라이즈로 발동된 이퀼은 버프 지속시간 증가 무시

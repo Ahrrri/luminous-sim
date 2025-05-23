@@ -1,21 +1,6 @@
 // src/ecs/components/StatsComponent.ts
 import { BaseComponent } from '../core/Component';
-
-export interface CharacterStats {
-  int: number;
-  luk: number;
-  magicAttack: number;
-  bossDamage: number;
-  critDamage: number;
-  critRate: number;
-  fifthEnhancement: number;
-  sixthEnhancement: number;
-  merLevel: number;
-  buffDuration: number;
-  cooldownReduction: number;
-  continuousLevel: number;
-  cooldownResetChance: number;
-}
+import type { CharacterStats } from '../../data/types/characterTypes';
 
 export class StatsComponent extends BaseComponent {
   readonly type = 'stats';

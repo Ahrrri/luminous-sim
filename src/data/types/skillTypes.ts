@@ -1,10 +1,29 @@
 // src/data/types/skillTypes.ts
 
+export type LuminousState = 'LIGHT' | 'DARK' | 'EQUILIBRIUM';
+export type SkillElement = 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'NONE';
+
+export type SkillCategory = 
+  | 'direct_attack'     // 직접 공격 (라리플, 아포, 앱킬, 트노바) - 숨돌리기 O
+  | 'indirect_attack'   // 간접 공격 (이터널, 엔드리스) - 다른 스킬 적중시 자동 발동
+  | 'active_buff'       // 액티브 버프 (오쓰, 리버레이션 오브) - 숨돌리기 X
+  | 'instant_skill'     // 즉발형 스킬 (메모라이즈) - 숨돌리기 X
+  | 'summon';          // 소환 스킬 (진리의 문, 세례, 퍼니싱) - 숨돌리기 X
+
+export interface DynamicSkillProperties {
+  damage?: number;
+  hitCount?: number;
+  element?: SkillElement;
+  maxTargets?: number;
+  gaugeCharge?: number;
+}
+
 export interface SkillData {
   id: string;
   name: string;
   icon: string;
-  element: 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'NONE';
+  element: SkillElement;
+  category: SkillCategory;
   
   // 데미지 관련
   damage?: number;  // 기본 데미지
@@ -37,7 +56,14 @@ export interface SkillData {
   // 쿨타임 관련
   cooldown: number;
   cooldownVI?: number;  // VI 스킬 쿨타임
-  cooldownReductionOnEquilibriumSkill?: number;  // 이퀼 스킬 적중시 감소량
+  cooldownReductionOnEquilibriumSkill?: {
+    amount: number;                    // 감소량 (ms)
+    excludeSkills?: string[];          // 제외할 스킬 ID들
+    excludeConditions?: {              // 더 복잡한 제외 조건
+      skillId: string;
+      whenState?: LuminousState[];     // 특정 상태에서만 제외
+    }[];
+  };
   
   // 버프/지속 관련
   duration?: number;  // 지속시간
@@ -51,10 +77,35 @@ export interface SkillData {
   ignoreBuffDuration?: boolean;  // 버프 지속시간 증가 무시 (메모라이즈)
   usageLimit?: 'once_per_equilibrium';  // 사용 제한
   
+  // 시스템 연동 관련
+  canDirectUse?: boolean;             // 직접 사용 가능 여부 (기본: true)
+  canUseWhileCasting?: boolean;       // 다른 스킬 사용 중에도 사용 가능 (기본: false)
+  cannotUseWhileCasting?: string[];   // 특정 스킬들 사용 중에는 사용 불가 (스킬 ID 배열)
+  triggersBreathing?: boolean;        // 숨돌리기 발동 여부 (기본: category 기반 자동 결정)
+  affectedByBuffDuration?: boolean;   // 버프 지속시간 증가 적용 여부 (기본: true)
+  affectedByCooldownReduction?: boolean; // 쿨타임 감소 적용 여부 (기본: true)
+  
+  // 간접 스킬용 트리거 조건
+  triggerConditions?: {
+    onSkillHit?: {
+      elements?: SkillElement[];        // 어떤 속성 스킬 적중시
+      categories?: SkillCategory[];     // 어떤 카테고리 적중시
+      requiredState?: LuminousState[];  // 필요한 상태
+    };
+  };
+  
+  // 강화 관련
+  canEnhanceFifth?: boolean;     // 5차 강화 가능 여부 (기본 true)
+  canEnhanceSixth?: boolean;     // 6차 강화 가능 여부 (기본 true)
+  fifthEnhanceRate?: number;     // 5차 강화 레벨당 증가율 (기본 2%)
+  sixthEnhanceRate?: number;     // 6차 강화 레벨당 증가율 (기본 3%)
+  maxFifthLevel?: number;        // 최대 5차 레벨 (기본 60)
+  maxSixthLevel?: number;        // 최대 6차 레벨 (기본 30)
+  
+  // 동적 스킬 관련
+  isDynamic?: boolean;
+  getDynamicProperties?: (state: LuminousState) => DynamicSkillProperties;
+  
   description?: string;
   defaultKeyBinding?: string;
 }
-
-export type SkillElement = 'LIGHT' | 'DARK' | 'EQUILIBRIUM' | 'NONE';
-
-export type SkillCategory = 'light' | 'dark' | 'equilibrium' | 'buff';

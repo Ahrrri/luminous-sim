@@ -17,7 +17,7 @@ export class GaugeSystem extends System {
   chargeGauge(entity: any, skillId: string, isVI: boolean = false): void {
     const gaugeComp = this.world.getComponent<GaugeComponent>(entity, 'gauge');
     const stateComp = this.world.getComponent<StateComponent>(entity, 'state');
-    
+
     if (!gaugeComp || !stateComp) return;
 
     // 스킬 데이터 가져오기
@@ -26,7 +26,7 @@ export class GaugeSystem extends System {
 
     // 게이지 충전량 결정
     let chargeAmount = 0;
-    
+
     if (skillDef.element === 'LIGHT' || skillDef.element === 'DARK') {
       // VI 스킬 사용시
       if (isVI && skillDef.gaugeChargeVI) {
@@ -46,29 +46,29 @@ export class GaugeSystem extends System {
     }
 
     // 상태에 따른 게이지 충전 규칙
-    if (stateComp.currentState === 'DARK') {
-      // 어둠 상태에서는 빛 게이지만 충전
-      if (skillDef.element === 'LIGHT' || skillDef.element === 'NONE') {
+    if (stateComp.currentState === 'LIGHT') {
+      // 빛 상태: 빛 스킬로만 빛 게이지 충전
+      if (skillDef.element === 'LIGHT') {
         gaugeComp.chargeLightGauge(chargeAmount);
         this.world.emitEvent('gauge:charged', entity, { type: 'light', amount: chargeAmount });
       }
-    } else if (stateComp.currentState === 'LIGHT') {
-      // 빛 상태에서는 어둠 게이지만 충전
-      if (skillDef.element === 'DARK' || skillDef.element === 'NONE') {
+    } else if (stateComp.currentState === 'DARK') {
+      // 어둠 상태: 어둠 스킬로만 어둠 게이지 충전
+      if (skillDef.element === 'DARK') {
         gaugeComp.chargeDarkGauge(chargeAmount);
         this.world.emitEvent('gauge:charged', entity, { type: 'dark', amount: chargeAmount });
       }
     } else if (stateComp.currentState === 'EQUILIBRIUM') {
-      // 이퀼 상태에서는 다음 상태의 반대 게이지 충전
+      // 이퀼 상태: 다음 상태의 반대 게이지 충전
       if (stateComp.nextState === 'LIGHT') {
-        // 다음이 빛이면 어둠 게이지 충전
-        if (skillDef.element === 'DARK' || skillDef.element === 'NONE' || skillDef.element === 'EQUILIBRIUM') {
+        // 다음이 빛 → 어둠 게이지 충전 (어둠 스킬로)
+        if (skillDef.element === 'DARK') {
           gaugeComp.chargeDarkGauge(chargeAmount);
           this.world.emitEvent('gauge:charged', entity, { type: 'dark', amount: chargeAmount });
         }
       } else {
-        // 다음이 어둠이면 빛 게이지 충전
-        if (skillDef.element === 'LIGHT' || skillDef.element === 'NONE' || skillDef.element === 'EQUILIBRIUM') {
+        // 다음이 어둠 → 빛 게이지 충전 (빛 스킬로)
+        if (skillDef.element === 'LIGHT') {
           gaugeComp.chargeLightGauge(chargeAmount);
           this.world.emitEvent('gauge:charged', entity, { type: 'light', amount: chargeAmount });
         }
@@ -80,7 +80,7 @@ export class GaugeSystem extends System {
   chargeGaugeMiss(entity: any, skillId: string, isVI: boolean = false): void {
     const gaugeComp = this.world.getComponent<GaugeComponent>(entity, 'gauge');
     const stateComp = this.world.getComponent<StateComponent>(entity, 'state');
-    
+
     if (!gaugeComp || !stateComp) return;
 
     const skillDef = LUMINOUS_SKILLS.find(s => s.id === skillId);
