@@ -15,6 +15,7 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     gaugeCharge: 409,
     gaugeChargeVI: 450,
     cooldown: 0,
+    actionDelay: 600,  // 600ms 액션 딜레이
     description: '빛의 힘을 이용한 기본 공격 스킬',
     defaultKeyBinding: 'Q',
     isEquilibriumSkill: false,
@@ -221,10 +222,17 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     maxTargets: 12,
     gaugeCharge: 0,
     cooldown: 0,
+    actionDelay: 600,
     description: '이퀼리브리엄 진입 시 1회만 사용 가능한 설치기',
     defaultKeyBinding: 'R',
     isEquilibriumSkill: false,
     usageLimit: 'once_per_equilibrium',
+    // 소환수 정보
+    summonType: 'placed',
+    summonDuration: 30000,      // 30초 지속
+    summonAttackInterval: 300,  // 300ms마다 공격
+    summonRange: 800,           // 사거리
+    summonDelay: 600,           // 소환 완료까지 600ms
     // 시스템 연동
     triggersBreathing: false,
     affectedByBuffDuration: false,
@@ -248,6 +256,7 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     maxTargets: 1,
     gaugeCharge: 0,
     cooldown: 30000,
+    actionDelay: 600,
     description: '이퀼리브리엄 스킬 적중시 쿨타임 2초 감소, 이퀼 진입시 초기화',
     defaultKeyBinding: 'A',
     isEquilibriumSkill: false,
@@ -262,6 +271,12 @@ export const LUMINOUS_SKILLS: SkillData[] = [
         }
       ]
     },
+    // 소환수 정보
+    summonType: 'instant',
+    summonDuration: 10000,      // 10초 지속 (13회 공격)
+    summonAttackInterval: 770,  // 770ms마다 공격 (13회)
+    summonRange: 600,           // 사거리
+    summonDelay: 600,           // 소환 완료까지 600ms
     // 시스템 연동
     triggersBreathing: false,
     affectedByBuffDuration: false,
@@ -282,11 +297,18 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     maxTargets: 10,
     gaugeCharge: 0,
     cooldown: 30000,
+    actionDelay: 600,
     duration: 6000,
     description: '실시간으로 라크니스 상태가 적용되는 설치기',
     defaultKeyBinding: 'D',
     isEquilibriumSkill: false,
     additionalCritRate: 15,
+    // 소환수 정보
+    summonType: 'placed',
+    summonDuration: 6000,       // 6초 지속
+    summonAttackInterval: 210,  // 210ms마다 공격
+    summonRange: 700,           // 사거리
+    summonDelay: 600,           // 소환 완료까지 600ms
     // 시스템 연동
     triggersBreathing: false,
     affectedByBuffDuration: false,

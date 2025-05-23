@@ -2,6 +2,7 @@
 import { BaseComponent } from '../core/Component';
 import { calculateBuffDuration } from '../../utils/buffDurationUtils';
 import { applyServerLagToBuffEnd } from '../../utils/serverLagUtils';
+import { LUMINOUS_SKILLS } from '../../data/skills';
 
 export interface BuffData {
   id: string;
@@ -61,8 +62,21 @@ export class BuffComponent extends BaseComponent {
   }
 
   addBuff(buff: BuffData): void {
+    // 버프 지속시간 증가 적용 여부 확인
+    let shouldApplyBuffDuration = true;
+    
+    // 스킬 데이터에서 affectedByBuffDuration 확인
+    // 이 부분은 스킬 ID가 있는 경우에만 적용
+    if (buff.id && typeof buff.ignoreBuffDuration === 'undefined') {
+      // LUMINOUS_SKILLS에서 해당 스킬 찾기
+      const skillDef = LUMINOUS_SKILLS.find(s => s.id === buff.id);
+      if (skillDef && skillDef.affectedByBuffDuration === false) {
+        shouldApplyBuffDuration = false;
+      }
+    }
+    
     // 버프 지속시간 증가 적용
-    if (!buff.ignoreBuffDuration) {
+    if (!buff.ignoreBuffDuration && shouldApplyBuffDuration) {
       buff.actualDuration = calculateBuffDuration(
         buff.duration,
         this.buffDurationIncrease

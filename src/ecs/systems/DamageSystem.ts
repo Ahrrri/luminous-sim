@@ -6,7 +6,9 @@ import { BuffComponent } from '../components/BuffComponent';
 import { StatsComponent } from '../components/StatsComponent';
 import { TimeComponent } from '../components/TimeComponent';
 import { StateComponent } from '../components/StateComponent';
+import { SkillComponent } from '../components/SkillComponent';
 import { LUMINOUS_SKILLS } from '../../data/skills';
+import type { SkillData } from '../../data/types/skillTypes';
 
 export class DamageSystem extends System {
   readonly name = 'DamageSystem';
@@ -89,26 +91,119 @@ export class DamageSystem extends System {
     // 데미지 이벤트 발생
     this.world.emitEvent('damage:dealt', entity, damageRecord);
 
+    // 간접 스킬 자동 발동 처리
+    this.triggerIndirectSkills(entity, skillDef, stateComp);
+
     // 빛과 어둠의 세례 특수 효과 처리
-    this.handleBaptismEffect(entity, skillId, stateComp);
+    this.handleBaptismEffect(entity, skillId, skillDef, stateComp);
 
     return totalDamage;
   }
 
+  // 간접 스킬 자동 발동 처리
+  private triggerIndirectSkills(entity: any, triggerSkill: SkillData, stateComp?: StateComponent): void {
+    if (!stateComp) return;
+
+    const skillComp = this.world.getComponent<SkillComponent>(entity, 'skill');
+    const timeComp = this.world.getComponent<TimeComponent>(entity, 'time');
+    
+    if (!skillComp || !timeComp) return;
+
+    // 간접 스킬들 중에서 트리거 조건이 맞는 것들 찾기
+    const indirectSkills = LUMINOUS_SKILLS.filter(skill => 
+      skill.category === 'indirect_attack' && 
+      skill.triggerConditions?.onSkillHit
+    );
+
+    indirectSkills.forEach(indirectSkill => {
+      const trigger = indirectSkill.triggerConditions!.onSkillHit!;
+      
+      // 트리거 조건 확인
+      let shouldTrigger = true;
+      
+      // 1. 속성 조건 확인
+      if (trigger.elements && !trigger.elements.includes(triggerSkill.element)) {
+        shouldTrigger = false;
+      }
+      
+      // 2. 카테고리 조건 확인
+      if (trigger.categories && !trigger.categories.includes(triggerSkill.category)) {
+        shouldTrigger = false;
+      }
+      
+      // 3. 상태 조건 확인
+      if (trigger.requiredState && !trigger.requiredState.includes(stateComp.currentState)) {
+        shouldTrigger = false;
+      }
+      
+      // 4. 스킬 쿨타임 확인
+      if (!skillComp.isSkillAvailable(indirectSkill.id)) {
+        shouldTrigger = false;
+      }
+      
+      if (shouldTrigger) {
+        // 간접 스킬 발동 (캐스팅 체크 무시)
+        if (skillComp.useSkill(indirectSkill.id, timeComp.currentTime)) {
+          // 간접 스킬 데미지 계산 및 적용
+          const indirectDamage = this.calculateAndApplyDamage(
+            entity,
+            indirectSkill.id,
+            indirectSkill.damage || 0,
+            indirectSkill.hitCount || 1,
+            indirectSkill.maxTargets,
+            false  // VI 아님
+          );
+          
+          console.log(`${indirectSkill.name} 자동 발동: ${indirectDamage.toLocaleString()} 데미지`);
+          
+          // 게이지 충전 (간접 스킬도 게이지 충전 가능)
+          const gaugeSystem = this.world.getSystem<any>('GaugeSystem');
+          if (gaugeSystem) {
+            gaugeSystem.chargeGauge(entity, indirectSkill.id, false);
+          }
+        }
+      }
+    });
+  }
+
   // 빛과 어둠의 세례 쿨타임 감소 효과
-  private handleBaptismEffect(entity: any, skillId: string, stateComp?: StateComponent): void {
+  private handleBaptismEffect(entity: any, skillId: string, skillDef: SkillData, stateComp?: StateComponent): void {
     if (!stateComp || stateComp.currentState !== 'EQUILIBRIUM') return;
 
-    const skillDef = LUMINOUS_SKILLS.find(s => s.id === skillId);
-    if (!skillDef || !skillDef.isEquilibriumSkill) return;
+    if (!skillDef.isEquilibriumSkill) return;
 
-    // 트와일라잇 노바는 제외
-    if (skillId === 'twilight_nova') return;
+    // 빛과 어둠의 세례 스킬 데이터 가져오기
+    const baptismSkill = LUMINOUS_SKILLS.find(s => s.id === 'baptism_of_light_and_darkness');
+    if (!baptismSkill || !baptismSkill.cooldownReductionOnEquilibriumSkill) return;
 
-    // 빛과 어둠의 세례 쿨타임 2초 감소
-    const skillSystem = this.world.getSystem<any>('SkillSystem');
-    if (skillSystem) {
-      skillSystem.reduceSkillCooldown(entity, 'baptism_of_light_and_darkness', 2000);
+    const reductionConfig = baptismSkill.cooldownReductionOnEquilibriumSkill;
+    
+    // 제외 조건 확인
+    let shouldReduce = true;
+    
+    // 1. 제외 스킬 목록 확인
+    if (reductionConfig.excludeSkills && reductionConfig.excludeSkills.includes(skillId)) {
+      shouldReduce = false;
+    }
+    
+    // 2. 복잡한 제외 조건 확인
+    if (reductionConfig.excludeConditions) {
+      reductionConfig.excludeConditions.forEach(condition => {
+        if (condition.skillId === skillId) {
+          // 특정 상태에서만 제외하는 조건
+          if (!condition.whenState || condition.whenState.includes(stateComp.currentState)) {
+            shouldReduce = false;
+          }
+        }
+      });
+    }
+    
+    if (shouldReduce) {
+      // 세례 쿨타임 감소
+      const skillSystem = this.world.getSystem<any>('SkillSystem');
+      if (skillSystem) {
+        skillSystem.reduceSkillCooldown(entity, 'baptism_of_light_and_darkness', reductionConfig.amount);
+      }
     }
   }
 }

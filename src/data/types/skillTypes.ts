@@ -56,6 +56,7 @@ export interface SkillData {
   // 쿨타임 관련
   cooldown: number;
   cooldownVI?: number;  // VI 스킬 쿨타임
+  actionDelay?: number; // 액션 딜레이 (ms, 기본: 600ms)
   cooldownReductionOnEquilibriumSkill?: {
     amount: number;                    // 감소량 (ms)
     excludeSkills?: string[];          // 제외할 스킬 ID들
@@ -68,6 +69,13 @@ export interface SkillData {
   // 버프/지속 관련
   duration?: number;  // 지속시간
   damageIncrease?: number;  // 데미지 증가량 (오쓰)
+  
+  // 소환수 관련
+  summonType?: 'instant' | 'placed';  // 즉시 소환 / 설치형
+  summonDuration?: number;             // 소환수 지속시간 (ms)
+  summonAttackInterval?: number;       // 소환수 공격 주기 (ms)
+  summonRange?: number;                // 소환수 사거리
+  summonDelay?: number;                // 소환 완료까지 시간 (ms, 기본: actionDelay와 동일)
   
   // 특수 효과
   isEquilibriumSkill?: boolean;  // 이퀼리브리엄 계열 스킬 여부

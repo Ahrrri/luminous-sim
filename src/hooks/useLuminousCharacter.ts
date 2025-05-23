@@ -9,6 +9,7 @@ import { BuffComponent } from '../ecs/components/BuffComponent';
 import { DamageComponent } from '../ecs/components/DamageComponent';
 import { TimeComponent } from '../ecs/components/TimeComponent';
 import { StatsComponent } from '../ecs/components/StatsComponent';
+import { ActionDelayComponent } from '../ecs/components/ActionDelayComponent';
 import { LUMINOUS_SKILLS } from '../data/skills';
 import type { CharacterStats } from '../data/types/characterTypes';
 import type { SkillData as ECSSkillData } from '../ecs/components/SkillComponent';
@@ -22,6 +23,7 @@ interface LuminousCharacterData {
   damage: DamageComponent;
   time: TimeComponent;
   stats: StatsComponent;
+  actionDelay: ActionDelayComponent;
 }
 
 // 중앙화된 스킬 데이터를 ECS 스킬 데이터로 변환
@@ -97,6 +99,7 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
     const damageComp = new DamageComponent();
     const timeComp = new TimeComponent();
     const statsComp = new StatsComponent(stats);
+    const actionDelayComp = new ActionDelayComponent();
 
     world.addComponent(entity, stateComp);
     world.addComponent(entity, gaugeComp);
@@ -105,6 +108,7 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
     world.addComponent(entity, damageComp);
     world.addComponent(entity, timeComp);
     world.addComponent(entity, statsComp);
+    world.addComponent(entity, actionDelayComp);
 
     // 이퀼리브리엄 진입시 이벤트 리스너 등록
     const onEquilibriumEnter = (eventType: string, e: Entity) => {
@@ -126,7 +130,8 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
       buffs: buffComp,
       damage: damageComp,
       time: timeComp,
-      stats: statsComp
+      stats: statsComp,
+      actionDelay: actionDelayComp
     });
 
     return () => {

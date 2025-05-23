@@ -52,8 +52,11 @@ export function useSkillActions(entity: Entity | null) {
         console.log(`${skillDef.name} 사용: ${totalDamage.toLocaleString()} 데미지`);
       }
 
-      // 게이지 충전 (실제 스킬 ID 사용)
-      gaugeSystem.chargeGauge(entity, skillDef.id, false);
+      // 게이지 충전 (동적 스킬의 경우 actualSkillData 사용)
+      const gaugeChargeAmount = actualSkillData.gaugeCharge || skillDef.gaugeCharge;
+      if (gaugeChargeAmount > 0) {
+        gaugeSystem.chargeGauge(entity, skillDef.id, false);
+      }
 
       return true;
     }
