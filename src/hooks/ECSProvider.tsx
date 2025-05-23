@@ -8,7 +8,8 @@ import {
   SkillSystem, 
   BuffSystem, 
   DamageSystem, 
-  GaugeSystem 
+  GaugeSystem,
+  SummonSystem  // 추가
 } from '../ecs/systems';
 
 // ECS 컨텍스트 인터페이스 - 순수 시뮬레이션만
@@ -38,6 +39,7 @@ export const ECSProvider: React.FC<ECSProviderProps> = ({ children }) => {
     newWorld.addSystem(new BuffSystem());
     newWorld.addSystem(new DamageSystem());
     newWorld.addSystem(new GaugeSystem());
+    newWorld.addSystem(new SummonSystem());  // 추가
     
     // step 함수 - 고정 시간 간격으로 시뮬레이션 진행
     const step = (deltaTime: number) => {

@@ -17,4 +17,8 @@ export type { DamageRecord } from './DamageComponent';
 export { TimeComponent } from './TimeComponent';
 
 export { StatsComponent } from './StatsComponent';
-export type { CharacterStats } from './StatsComponent';
+
+export { EnhancementComponent } from './EnhancementComponent';
+export { ActionDelayComponent } from './ActionDelayComponent';
+export { SummonComponent } from './SummonComponent';
+export type { SummonData } from './SummonComponent';

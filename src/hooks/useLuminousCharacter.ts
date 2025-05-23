@@ -9,9 +9,11 @@ import { BuffComponent } from '../ecs/components/BuffComponent';
 import { DamageComponent } from '../ecs/components/DamageComponent';
 import { TimeComponent } from '../ecs/components/TimeComponent';
 import { StatsComponent } from '../ecs/components/StatsComponent';
+import { EnhancementComponent } from '../ecs/components/EnhancementComponent';
 import { ActionDelayComponent } from '../ecs/components/ActionDelayComponent';
 import { LUMINOUS_SKILLS } from '../data/skills';
-import type { CharacterStats } from '../data/types/characterTypes';
+import type { CharacterStats, SkillEnhancement } from '../data/types/characterTypes';
+import type { EnhancementSettings } from '../data/enhancements/types';
 import type { SkillData as ECSSkillData } from '../ecs/components/SkillComponent';
 
 interface LuminousCharacterData {
@@ -23,6 +25,7 @@ interface LuminousCharacterData {
   damage: DamageComponent;
   time: TimeComponent;
   stats: StatsComponent;
+  enhancement: EnhancementComponent;
   actionDelay: ActionDelayComponent;
 }
 
@@ -42,7 +45,22 @@ const convertToECSSkillData = (stats?: CharacterStats): ECSSkillData[] => {
   });
 };
 
-export function useLuminousCharacter(characterStats?: CharacterStats): LuminousCharacterData | null {
+// 캐릭터 스킬 강화 설정을 EnhancementSettings로 변환
+const convertToEnhancementSettings = (skillEnhancements: SkillEnhancement[]): EnhancementSettings => {
+  const settings: EnhancementSettings = {};
+  skillEnhancements.forEach(enhancement => {
+    settings[enhancement.skillId] = {
+      fifthLevel: enhancement.fifthLevel,
+      sixthLevel: enhancement.sixthLevel
+    };
+  });
+  return settings;
+};
+
+export function useLuminousCharacter(
+  characterStats?: CharacterStats,
+  skillEnhancements?: SkillEnhancement[]
+): LuminousCharacterData | null {
   const { world } = useECS();
   const [character, setCharacter] = useState<LuminousCharacterData | null>(null);
 
@@ -69,7 +87,15 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
       equilibriumMode: 'AUTO'
     };
 
+    // 기본 스킬 강화 (모든 스킬 5차 60레벨, 6차 30레벨)
+    const defaultEnhancements: SkillEnhancement[] = LUMINOUS_SKILLS.map(skill => ({
+      skillId: skill.id,
+      fifthLevel: 60,
+      sixthLevel: 30
+    }));
+
     const stats = characterStats || defaultStats;
+    const enhancements = skillEnhancements || defaultEnhancements;
 
     // 루미너스 캐릭터 Entity 생성
     const entity = world.createEntity();
@@ -99,6 +125,7 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
     const damageComp = new DamageComponent();
     const timeComp = new TimeComponent();
     const statsComp = new StatsComponent(stats);
+    const enhancementComp = new EnhancementComponent(convertToEnhancementSettings(enhancements));
     const actionDelayComp = new ActionDelayComponent();
 
     world.addComponent(entity, stateComp);
@@ -108,6 +135,7 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
     world.addComponent(entity, damageComp);
     world.addComponent(entity, timeComp);
     world.addComponent(entity, statsComp);
+    world.addComponent(entity, enhancementComp);
     world.addComponent(entity, actionDelayComp);
 
     // 이퀼리브리엄 진입시 이벤트 리스너 등록
@@ -131,6 +159,7 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
       damage: damageComp,
       time: timeComp,
       stats: statsComp,
+      enhancement: enhancementComp,
       actionDelay: actionDelayComp
     });
 
@@ -138,7 +167,7 @@ export function useLuminousCharacter(characterStats?: CharacterStats): LuminousC
       world.off('state:entered_equilibrium', onEquilibriumEnter);
       world.destroyEntity(entity);
     };
-  }, [world, characterStats]);
+  }, [world, characterStats, skillEnhancements]);
 
   return character;
 }

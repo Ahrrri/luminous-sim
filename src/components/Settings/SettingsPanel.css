@@ -1,9 +1,9 @@
 /* src/components/Settings/SettingsPanel.css */
 
-/* ==================== 메인 레이아웃 ==================== */
+/* ==================== 기본 레이아웃 ==================== */
 .settings-panel {
   width: 100%;
-  max-width: 1600px;
+  max-width: 1800px;
   margin: 0 auto;
   padding: 2rem;
 }
@@ -58,9 +58,10 @@
   box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
 }
 
+/* ==================== 메인 레이아웃 ==================== */
 .settings-layout {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 350px 1fr;
   gap: 2rem;
   align-items: start;
 }
@@ -68,20 +69,19 @@
 .settings-left {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
 .settings-right {
-  position: sticky;
-  top: 2rem;
+  min-height: 0;
 }
 
-/* ==================== SettingsCard 컴포넌트 ==================== */
+/* ==================== 왼쪽 설정 카드들 ==================== */
 .settings-card {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 16px;
-  padding: 2rem;
+  padding: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -90,17 +90,17 @@
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
   border-bottom: 2px solid rgba(102, 126, 234, 0.2);
 }
 
 .settings-card-icon {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
 }
 
 .settings-card-title {
-  font-size: 1.5rem;
+  font-size: 1.25rem;
   font-weight: 600;
   color: #2d3748;
   margin: 0;
@@ -109,22 +109,22 @@
 .settings-card-content {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* ==================== 공통 섹션 레이아웃 ==================== */
-.settings-section {
-  display: flex;
-  flex-direction: column;
   gap: 1rem;
 }
 
+/* ==================== 설정 섹션 ==================== */
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .settings-section h3 {
-  font-size: 1.125rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #2d3748;
   margin: 0;
-  padding: 0.5rem 0 0.5rem 1rem;
+  padding: 0.5rem 0 0.5rem 0.75rem;
   border-left: 4px solid #667eea;
   background: rgba(102, 126, 234, 0.05);
   border-radius: 0 8px 8px 0;
@@ -133,27 +133,27 @@
 .settings-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1.5rem;
+  gap: 1rem;
 }
 
-/* ==================== InputField 컴포넌트 ==================== */
+/* ==================== 입력 필드들 ==================== */
 .input-field {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .input-label {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: #4a5568;
 }
 
 .input-control {
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
   background: rgba(255, 255, 255, 0.8);
   transition: all 0.2s ease;
   font-family: 'Courier New', monospace;
@@ -166,28 +166,23 @@
   background: white;
 }
 
-.input-control:hover {
-  border-color: rgba(102, 126, 234, 0.3);
-}
-
-/* ==================== SelectField 컴포넌트 ==================== */
 .select-field {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.25rem;
 }
 
 .select-label {
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   font-weight: 500;
   color: #4a5568;
 }
 
 .select-control {
-  padding: 0.75rem;
+  padding: 0.5rem;
   border: 2px solid rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  font-size: 0.875rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
   background: rgba(255, 255, 255, 0.8);
   cursor: pointer;
   transition: all 0.2s ease;
@@ -200,44 +195,14 @@
   background: white;
 }
 
-.select-control:hover {
-  border-color: rgba(102, 126, 234, 0.3);
-}
-
-/* ==================== 액션 버튼들 ==================== */
-.settings-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
-  margin-top: 1.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.1);
-}
-
-.reset-button {
-  padding: 0.75rem 1.5rem;
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.reset-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-}
-
-/* ==================== 체크박스 필드 ==================== */
+/* ==================== 체크박스 ==================== */
 .checkbox-field {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
+  gap: 0.5rem;
+  padding: 0.5rem;
   background: rgba(0, 0, 0, 0.02);
-  border-radius: 8px;
+  border-radius: 6px;
   transition: all 0.2s ease;
 }
 
@@ -248,153 +213,67 @@
 .checkbox-label {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
   cursor: pointer;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
   color: #4a5568;
 }
 
 .checkbox-label input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   accent-color: #667eea;
 }
 
-.checkbox-text {
-  font-weight: 500;
-}
-
-/* ==================== 스킬 강화 설정 ==================== */
-.bulk-controls {
+/* ==================== 액션 버튼들 ==================== */
+.settings-actions {
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.5rem;
-  background: rgba(59, 130, 246, 0.05);
-  border-radius: 12px;
-  border: 2px solid rgba(59, 130, 246, 0.1);
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.bulk-group {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
-}
-
-.bulk-label {
-  font-weight: 500;
-  color: #4a5568;
-  min-width: 120px;
-  font-size: 0.875rem;
-}
-
-.bulk-buttons {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-
-.bulk-button {
+.reset-button {
   padding: 0.5rem 1rem;
-  border: 2px solid rgba(59, 130, 246, 0.2);
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: white;
+  border: none;
   border-radius: 6px;
-  background: rgba(59, 130, 246, 0.1);
-  color: #2563eb;
-  font-weight: 500;
-  font-size: 0.875rem;
+  font-weight: 600;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
-.bulk-button:hover {
-  background: rgba(59, 130, 246, 0.2);
+.reset-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-.skill-enhancement-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.skill-enhancement-item {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1.25rem;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 12px;
-  border: 2px solid transparent;
-  transition: all 0.2s ease;
-}
-
-.skill-enhancement-item:hover {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(102, 126, 234, 0.2);
-  transform: translateY(-1px);
-}
-
-.skill-info {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  min-width: 200px;
-}
-
-.skill-icon {
-  font-size: 1.5rem;
-}
-
-.skill-name {
-  font-weight: 500;
-  color: #2d3748;
-  font-size: 0.95rem;
-}
-
-.enhancement-controls {
-  display: flex;
-  gap: 1rem;
-}
-
-.enhancement-controls .input-field {
-  min-width: 80px;
-}
-
-.enhancement-effect {
-  margin-left: auto;
-  padding: 0.375rem 0.875rem;
-  background: linear-gradient(135deg, #10b981, #059669);
-  color: white;
-  border-radius: 20px;
-  font-size: 0.875rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-/* ==================== 스킬 정보 패널 ==================== */
-.skill-info-panel {
+/* ==================== 스킬 정보 & 강화 패널 ==================== */
+.enhanced-skill-info-panel {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   border-radius: 16px;
   padding: 2rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  max-height: 80vh;
+  height: 80vh;
   overflow-y: auto;
 }
 
-.skill-info-panel .panel-header {
+.panel-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   padding-bottom: 1rem;
   border-bottom: 2px solid rgba(102, 126, 234, 0.2);
 }
 
-.skill-info-panel .panel-header h2 {
+.panel-header h2 {
   font-size: 1.5rem;
   font-weight: 600;
   color: #2d3748;
@@ -404,118 +283,263 @@
 .boss-info {
   display: flex;
   gap: 0.75rem;
-  font-size: 0.875rem;
+  font-size: 0.8rem;
 }
 
 .boss-info span {
-  padding: 0.375rem 0.875rem;
+  padding: 0.25rem 0.75rem;
   background: rgba(239, 68, 68, 0.1);
   color: #dc2626;
-  border-radius: 16px;
+  border-radius: 12px;
   font-weight: 600;
   border: 2px solid rgba(239, 68, 68, 0.2);
 }
 
-.skill-categories {
+/* ==================== 스킬 아이템들 ==================== */
+.all-skills-list {
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  gap: 1.5rem;
 }
 
-.skill-category .category-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #2d3748;
-  margin: 0 0 1rem 0;
-  padding: 0.75rem 0 0.75rem 1rem;
-  border-left: 4px solid;
-  background: rgba(0, 0, 0, 0.03);
-  border-radius: 0 12px 12px 0;
-}
-
-.skills-list {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-}
-
-.skill-item {
-  padding: 1.5rem;
+.enhanced-skill-item {
   background: rgba(0, 0, 0, 0.02);
   border-radius: 16px;
+  padding: 2rem;
   border: 2px solid transparent;
   transition: all 0.3s ease;
 }
 
-.skill-item:hover {
+.enhanced-skill-item:hover {
   background: rgba(0, 0, 0, 0.05);
   border-color: rgba(102, 126, 234, 0.2);
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
+/* ==================== 스킬 헤더 ==================== */
 .skill-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.25rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .skill-basic-info {
   display: flex;
   align-items: center;
+  gap: 1.5rem;
+}
+
+.skill-icon-large {
+  font-size: 3rem;
+  min-width: 4rem;
+  text-align: center;
+}
+
+.skill-title-info {
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
 }
 
-.skill-basic-info .skill-icon {
-  font-size: 2rem;
-}
-
-.skill-basic-info .skill-name {
-  font-size: 1.25rem;
-  font-weight: 600;
+.skill-name {
+  font-size: 1.5rem;
+  font-weight: 700;
   color: #2d3748;
 }
 
-.skill-enhancement {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.enhancement-badge {
-  padding: 0.375rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.75rem;
+.equilibrium-badge {
+  padding: 0.375rem 1rem;
+  background: linear-gradient(135deg, #42a5f5, #1e88e5);
+  color: white;
+  border-radius: 16px;
+  font-size: 0.8rem;
   font-weight: 600;
+  width: fit-content;
 }
 
-.enhancement-badge.fifth {
+.dependent-badge {
+  padding: 0.375rem 1rem;
   background: rgba(245, 158, 11, 0.2);
   color: #92400e;
   border: 2px solid rgba(245, 158, 11, 0.3);
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  width: fit-content;
 }
 
-.enhancement-badge.sixth {
-  background: rgba(139, 92, 246, 0.2);
-  color: #6d28d9;
-  border: 2px solid rgba(139, 92, 246, 0.3);
+/* ==================== 강화 컨트롤 ==================== */
+.skill-enhancement-controls {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
 }
 
-.skill-stats {
+.enhancement-input {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.enhancement-input label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.enhancement-input input {
+  width: 80px;
+  padding: 0.75rem;
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 1rem;
+  background: rgba(255, 255, 255, 0.8);
+  transition: all 0.2s ease;
+}
+
+.enhancement-input input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.enhancement-input input:disabled {
+  background: rgba(0, 0, 0, 0.05);
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* ==================== 스킬 상세 정보 ==================== */
+.skill-details-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 1.25rem;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+}
+
+.skill-stats-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 2rem;
+  align-items: start;
+}
+
+.skill-stats-section h4 {
+  grid-column: 1 / -1;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid rgba(102, 126, 234, 0.2);
+}
+
+/* ==================== 데미지 변형들 ==================== */
+.damage-variant {
+  background: rgba(102, 126, 234, 0.05);
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #667eea;
+}
+
+.variant-header {
+  font-weight: 700;
+  color: #667eea;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  text-align: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(102, 126, 234, 0.2);
+}
+
+.damage-calculation {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.damage-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.25rem 0;
+  font-size: 0.9rem;
+}
+
+.damage-line .label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.damage-line .value {
+  font-weight: 700;
+  color: #2d3748;
+  font-family: 'Courier New', monospace;
+}
+
+.damage-line.enhancement .value {
+  color: #059669;
+}
+
+.damage-line.total {
+  border-top: 2px solid rgba(0, 0, 0, 0.1);
+  padding-top: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.damage-line.total .value {
+  color: #dc2626;
+  font-weight: 900;
+  font-size: 1.1rem;
+}
+
+/* ==================== 최종 데미지 보너스 ==================== */
+.final-damage-bonus {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), rgba(5, 150, 105, 0.1));
+  border-radius: 12px;
+  padding: 1.5rem;
+  border-left: 4px solid #10b981;
+  text-align: center;
+}
+
+.bonus-header {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 0.75rem;
+}
+
+.bonus-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #047857;
+  font-family: 'Courier New', monospace;
+}
+
+/* ==================== 기본 스탯 ==================== */
+.basic-stats {
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+  padding: 1.5rem;
 }
 
 .stat-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.875rem;
-  padding: 0.5rem;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 6px;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.stat-row:last-child {
+  border-bottom: none;
 }
 
 .stat-label {
@@ -525,60 +549,39 @@
 
 .stat-value {
   color: #2d3748;
-  font-weight: 600;
-  font-family: 'Courier New', monospace;
-}
-
-.stat-value.enhanced {
-  color: #059669;
-}
-
-.damage-prediction {
-  text-align: center;
-  padding: 1.25rem;
-  background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-  border-radius: 12px;
-  border: 2px solid rgba(102, 126, 234, 0.2);
-}
-
-.prediction-title {
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
-  margin-bottom: 0.5rem;
-}
-
-.prediction-value {
-  font-size: 1.75rem;
   font-weight: 700;
-  color: #2d3748;
   font-family: 'Courier New', monospace;
 }
 
 /* ==================== 반응형 디자인 ==================== */
 @media (max-width: 1400px) {
   .settings-layout {
-    grid-template-columns: 1fr;
+    grid-template-columns: 320px 1fr;
   }
-
-  .settings-right {
-    position: static;
+  
+  .skill-stats-section {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   }
 }
 
-@media (max-width: 1024px) {
-  .settings-row {
+@media (max-width: 1200px) {
+  .settings-layout {
     grid-template-columns: 1fr;
   }
-
-  .bulk-group {
-    flex-direction: column;
-    align-items: stretch;
+  
+  .settings-right {
+    order: -1;
   }
-
-  .bulk-label {
-    min-width: auto;
+  
+  .skill-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: stretch;
     text-align: center;
+  }
+  
+  .skill-enhancement-controls {
+    justify-content: center;
   }
 }
 
@@ -586,74 +589,46 @@
   .settings-panel {
     padding: 1rem;
   }
-
+  
   .settings-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-
-  .settings-card {
+  
+  .enhanced-skill-item {
     padding: 1.5rem;
   }
-
-  .skill-enhancement-item {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 1rem;
+  
+  .skill-icon-large {
+    font-size: 2.5rem;
   }
-
-  .skill-info {
-    min-width: auto;
-    justify-content: center;
-  }
-
-  .enhancement-controls {
-    justify-content: center;
-  }
-
-  .enhancement-effect {
-    margin-left: 0;
-    align-self: center;
-  }
-
-  .skill-header {
-    flex-direction: column;
-    gap: 1rem;
-    text-align: center;
-  }
-
-  .skill-stats {
+  
+  .skill-stats-section {
     grid-template-columns: 1fr;
   }
-
+  
+  .settings-row {
+    grid-template-columns: 1fr;
+  }
+  
   .boss-info {
     flex-direction: column;
     gap: 0.5rem;
   }
 }
 
-/* 스킬 정보 패널 추가 스타일 */
-.equilibrium-badge {
-  margin-left: 0.5rem;
-  padding: 0.125rem 0.5rem;
-  background: linear-gradient(135deg, #42a5f5, #1e88e5);
-  color: white;
-  border-radius: 12px;
-  font-size: 0.625rem;
-  font-weight: 600;
-}
-
-.damage-variant {
-  padding: 0.75rem;
-  background: rgba(0, 0, 0, 0.02);
-  border-radius: 6px;
-  margin-bottom: 0.5rem;
-}
-
-.variant-header {
-  font-weight: 600;
-  color: #667eea;
-  margin-bottom: 0.5rem;
-  font-size: 0.875rem;
+@media (max-width: 480px) {
+  .enhancement-input {
+    flex: 1;
+  }
+  
+  .enhancement-input input {
+    width: 100%;
+  }
+  
+  .skill-enhancement-controls {
+    flex-direction: column;
+    gap: 1rem;
+  }
 }

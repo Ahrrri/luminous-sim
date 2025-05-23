@@ -7,6 +7,7 @@ import { StateComponent } from '../components/StateComponent';
 import { ActionDelayComponent } from '../components/ActionDelayComponent';
 import { LUMINOUS_SKILLS } from '../../data/skills';
 import type { SkillData } from '../../data/types/skillTypes';
+import type { SummonSystem } from './SummonSystem';
 
 export class SkillSystem extends System {
   readonly name = 'SkillSystem';
@@ -77,6 +78,11 @@ export class SkillSystem extends System {
         actionDelayComp.startActionDelay(skillId, actionDelay, timeComp.currentTime);
       }
 
+      // 소환 스킬인 경우 소환수 생성
+      if (skillDef.category === 'summon') {
+        this.handleSummonSkill(entity, skillDef, timeComp.currentTime);
+      }
+
       // 빛과 어둠의 세례 특수 효과: 이퀼 스킬 적중시 쿨타임 감소
       if (skillId === 'baptism_of_light_and_darkness') {
         this.setupBaptismCooldownReduction(entity);
@@ -92,6 +98,29 @@ export class SkillSystem extends System {
     }
 
     return false;
+  }
+
+  // 소환 스킬 처리
+  private handleSummonSkill(entity: any, skillDef: SkillData, currentTime: number): void {
+    const summonSystem = this.world.getSystem<SummonSystem>('SummonSystem');
+    if (!summonSystem) {
+      console.error('SummonSystem을 찾을 수 없습니다.');
+      return;
+    }
+
+    // 중복 소환수 제거 (예: 퍼니싱은 새로 시전하면 기존 것이 사라짐)
+    if (skillDef.id === 'punishing_resonator' || skillDef.id === 'door_of_truth') {
+      summonSystem.destroySummonsBySkill(entity.id, skillDef.id);
+    }
+
+    // 소환수 생성
+    const summonEntity = summonSystem.createSummon(entity, skillDef, currentTime);
+    
+    if (summonEntity) {
+      console.log(`${skillDef.name} 소환 시전 완료`);
+    } else {
+      console.error(`${skillDef.name} 소환 실패`);
+    }
   }
 
   // 액션 딜레이 중에도 사용 가능한지 확인

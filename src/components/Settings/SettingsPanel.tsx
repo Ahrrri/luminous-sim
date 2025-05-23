@@ -1,9 +1,8 @@
 // src/components/Settings/SettingsPanel.tsx
 import React, { useState } from 'react';
 import { CharacterSettings } from './CharacterSettings';
-import { SkillEnhancementSettings } from './SkillEnhancementSettings';
 import { SimulationSettings } from './SimulationSettings';
-import { SkillInfoPanel } from './SkillInfoPanel';
+import { EnhancedSkillInfoPanel } from './EnhancedSkillInfoPanel';
 import { LUMINOUS_SKILLS } from '../../data/skills';
 import type { CharacterStats, BossStats, SkillEnhancement, GameSettings } from '../../data/types/characterTypes';
 import './SettingsPanel.css';
@@ -94,7 +93,7 @@ export const SettingsPanel: React.FC = () => {
   };
 
   return (
-    <div className="-settings-panel">
+    <div className="settings-panel">
       <div className="settings-header">
         <h1>⚙️ 캐릭터 설정</h1>
         <div className="settings-actions">
@@ -122,19 +121,15 @@ export const SettingsPanel: React.FC = () => {
             onBossStatsChange={setBossStats}
           />
           
-          <SkillEnhancementSettings
-            skillEnhancements={skillEnhancements}
-            onSkillEnhancementChange={setSkillEnhancements}
-          />
-          
           <SimulationSettings />
         </div>
 
         <div className="settings-right">
-          <SkillInfoPanel
+          <EnhancedSkillInfoPanel
             characterStats={characterStats}
             bossStats={bossStats}
             skillEnhancements={skillEnhancements}
+            onSkillEnhancementChange={setSkillEnhancements}
           />
         </div>
       </div>
