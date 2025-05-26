@@ -22,6 +22,7 @@ export interface SkillData {
   id: string;
   name: string;
   icon: string;
+  iconPath?: string;  // 스킬 아이콘 이미지 경로 추가
   element: SkillElement;
   category: SkillCategory;
   

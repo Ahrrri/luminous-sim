@@ -2,9 +2,9 @@
 import React, { useState } from 'react';
 import { CharacterSettings } from './CharacterSettings';
 import { SimulationSettings } from './SimulationSettings';
-import { EnhancedSkillInfoPanel } from './EnhancedSkillInfoPanel';
 import { LUMINOUS_SKILLS } from '../../data/skills';
 import type { CharacterStats, BossStats, SkillEnhancement, GameSettings } from '../../data/types/characterTypes';
+import { CompactSkillInfoPanel } from './CompactSkillInfoPanel';
 import './SettingsPanel.css';
 
 export const SettingsPanel: React.FC = () => {
@@ -63,12 +63,12 @@ export const SettingsPanel: React.FC = () => {
     const dataStr = JSON.stringify(settings, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
-    
+
     const link = document.createElement('a');
     link.href = url;
     link.download = 'luminous_settings.json';
     link.click();
-    
+
     URL.revokeObjectURL(url);
   };
 
@@ -120,12 +120,12 @@ export const SettingsPanel: React.FC = () => {
             onCharacterStatsChange={setCharacterStats}
             onBossStatsChange={setBossStats}
           />
-          
+
           <SimulationSettings />
         </div>
 
         <div className="settings-right">
-          <EnhancedSkillInfoPanel
+          <CompactSkillInfoPanel
             characterStats={characterStats}
             bossStats={bossStats}
             skillEnhancements={skillEnhancements}
