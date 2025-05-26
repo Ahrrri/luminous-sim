@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { LUMINOUS_SKILLS } from '../../data/skills';
 import { ENHANCEMENT_DATA } from '../../data/enhancements/enhancementData';
-import { PREDEFINED_PATTERNS } from '../../data/enhancements/enhancementPatterns';
 import { SkillIcon } from '../common/SkillIcon';
 import type { CharacterStats, BossStats, SkillEnhancement } from '../../data/types/characterTypes';
 import type { SkillData } from '../../data/types/skillTypes';
@@ -38,35 +37,39 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     };
   };
 
-  // 강화 레벨 업데이트
   const updateSkillEnhancement = (skillId: string, field: 'fifthLevel' | 'sixthLevel', value: number) => {
-    const updatedEnhancements = skillEnhancements.filter(e => e.skillId !== skillId);
-    const currentEnhancement = getSkillEnhancement(skillId);
+    // 1. 현재 스킬과 종속될 스킬들의 ID를 미리 수집
+    const skillsToUpdate = [skillId];
     
-    const newEnhancement = {
+    if (field === 'sixthLevel') {
+      Object.entries(ENHANCEMENT_DATA).forEach(([dependentSkillId, data]) => {
+        if (data.sixth?.dependsOn === skillId) {
+          skillsToUpdate.push(dependentSkillId);
+        }
+      });
+    }
+    
+    // 2. 업데이트할 모든 스킬들을 제거
+    const updatedEnhancements = skillEnhancements.filter(e => !skillsToUpdate.includes(e.skillId));
+    
+    // 3. 현재 스킬 업데이트
+    const currentEnhancement = getSkillEnhancement(skillId);
+    updatedEnhancements.push({
       ...currentEnhancement,
       [field]: value
-    };
+    });
     
-    updatedEnhancements.push(newEnhancement);
-    
-    // 종속 스킬 처리 (이터널/엔드리스)
+    // 4. 종속 스킬들 업데이트
     if (field === 'sixthLevel') {
-      if (skillId === 'reflection') {
-        // 라이트 리플렉션VI → 엔드리스 다크니스VI
-        const endlessEnhancement = getSkillEnhancement('endless_darkness');
-        updatedEnhancements.push({
-          ...endlessEnhancement,
-          sixthLevel: value
-        });
-      } else if (skillId === 'apocalypse') {
-        // 아포칼립스VI → 이터널 라이트니스VI
-        const eternalEnhancement = getSkillEnhancement('eternal_lightness');
-        updatedEnhancements.push({
-          ...eternalEnhancement,
-          sixthLevel: value
-        });
-      }
+      Object.entries(ENHANCEMENT_DATA).forEach(([dependentSkillId, data]) => {
+        if (data.sixth?.dependsOn === skillId) {
+          const dependentEnhancement = getSkillEnhancement(dependentSkillId);
+          updatedEnhancements.push({
+            ...dependentEnhancement,
+            sixthLevel: value
+          });
+        }
+      });
     }
     
     onSkillEnhancementChange(updatedEnhancements);
@@ -87,12 +90,12 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     let sixthBonus = 0;
     
     // 5차 강화 효과
-    if (enhancementData?.fifth && enhancement.fifthLevel > 0) {
+    if (enhancementData?.fifth && enhancement.fifthLevel > 0 && skill.canEnhanceFifth !== false) {
       fifthMultiplier = 1 + (enhancement.fifthLevel * enhancementData.fifth.rate);
     }
     
     // 6차 강화 효과
-    if (enhancementData?.sixth && enhancement.sixthLevel > 0) {
+    if (enhancementData?.sixth && enhancement.sixthLevel > 0 && skill.canEnhanceSixth !== false) {
       if (enhancementData.sixth.type === 'skill_data_override' && enhancementData.sixth.overrides?.damage) {
         const overrideConfig = enhancementData.sixth.overrides.damage;
         if (overrideConfig.base !== undefined && overrideConfig.increment !== undefined) {
@@ -118,6 +121,9 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
 
   // 최종 데미지 증가량 계산
   const getFinalDamageIncrease = (skillId: string): number => {
+    const skill = LUMINOUS_SKILLS.find(s => s.id === skillId);
+    if (!skill || skill.canEnhanceSixth === false) return 0;
+
     const enhancement = getSkillEnhancement(skillId);
     const enhancementData = ENHANCEMENT_DATA[skillId];
     
@@ -145,6 +151,23 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
   const isDependentSkill = (skillId: string): boolean => {
     const enhancementData = ENHANCEMENT_DATA[skillId];
     return !!enhancementData?.sixth?.dependsOn;
+  };
+
+  // 강화 가능 여부 확인
+  const canEnhanceLevel = (skill: SkillData, level: 'fifth' | 'sixth'): boolean => {
+    if (level === 'fifth') {
+      return skill.canEnhanceFifth !== false;
+    } else {
+      return skill.canEnhanceSixth !== false;
+    }
+  };
+
+  // 표시할 강화 레벨 결정 (강화 불가능하면 '-' 표시)
+  const getDisplayLevel = (skill: SkillData, enhancement: SkillEnhancement, level: 'fifth' | 'sixth'): string => {
+    if (!canEnhanceLevel(skill, level)) {
+      return '-';
+    }
+    return level === 'fifth' ? enhancement.fifthLevel.toString() : enhancement.sixthLevel.toString();
   };
 
   return (
@@ -182,8 +205,12 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                 
                 {/* 강화 레벨 표시 */}
                 <div className="enhancement-levels">
-                  <span className="fifth-level">{enhancement.fifthLevel}</span>
-                  <span className="sixth-level">{enhancement.sixthLevel}</span>
+                  <span className={`fifth-level ${!canEnhanceLevel(skill, 'fifth') ? 'disabled' : ''}`}>
+                    {getDisplayLevel(skill, enhancement, 'fifth')}
+                  </span>
+                  <span className={`sixth-level ${!canEnhanceLevel(skill, 'sixth') ? 'disabled' : ''}`}>
+                    {getDisplayLevel(skill, enhancement, 'sixth')}
+                  </span>
                 </div>
 
                 {/* 종속 스킬 표시 */}
@@ -206,6 +233,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                         value={enhancement.fifthLevel}
                         onChange={(e) => updateSkillEnhancement(skill.id, 'fifthLevel', Number(e.target.value))}
                         className="level-input"
+                        disabled={!canEnhanceLevel(skill, 'fifth')}
                       />
                     </div>
                     <div className="control-row">
@@ -217,9 +245,19 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                         value={enhancement.sixthLevel}
                         onChange={(e) => updateSkillEnhancement(skill.id, 'sixthLevel', Number(e.target.value))}
                         className="level-input"
-                        disabled={isDependent}
+                        disabled={!canEnhanceLevel(skill, 'sixth') || isDependent}
                       />
                     </div>
+                    {!canEnhanceLevel(skill, 'fifth') && !canEnhanceLevel(skill, 'sixth') && (
+                      <div className="no-enhancement-note">
+                        ⚠️ 강화 불가능한 스킬
+                      </div>
+                    )}
+                    {isDependent && canEnhanceLevel(skill, 'sixth') && (
+                      <div className="dependent-note">
+                        🔗 다른 스킬에 종속됨
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
@@ -256,6 +294,9 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
               {isDependentSkill(selectedSkill.id) && (
                 <span className="dependent-badge">종속 스킬</span>
               )}
+              {!canEnhanceLevel(selectedSkill, 'fifth') && !canEnhanceLevel(selectedSkill, 'sixth') && (
+                <span className="no-enhancement-badge">강화 불가</span>
+              )}
             </div>
           </div>
         </div>
@@ -274,7 +315,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                           <span className="detail-label">기본 퍼뎀:</span>
                           <span className="detail-value">{selectedSkill.damage}%</span>
                         </div>
-                        {calc.enhancedDamage !== calc.baseDamage && (
+                        {calc.enhancedDamage !== calc.baseDamage && (canEnhanceLevel(selectedSkill, 'fifth') || canEnhanceLevel(selectedSkill, 'sixth')) && (
                           <div className="detail-item">
                             <span className="detail-label">강화 퍼뎀:</span>
                             <span className="detail-value enhanced">{calc.enhancedDamage}%</span>
@@ -341,30 +382,55 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
               {(() => {
                 const enhancement = getSkillEnhancement(selectedSkill.id);
                 const finalDamage = getFinalDamageIncrease(selectedSkill.id);
+                const canFifth = canEnhanceLevel(selectedSkill, 'fifth');
+                const canSixth = canEnhanceLevel(selectedSkill, 'sixth');
+                
+                if (!canFifth && !canSixth) {
+                  return (
+                    <div className="no-enhancement-info">
+                      <div className="no-enhancement-message">
+                        ⚠️ 이 스킬은 강화가 불가능합니다.
+                      </div>
+                    </div>
+                  );
+                }
                 
                 return (
                   <div className="enhancement-grid">
-                    <div className="enhancement-item">
-                      <span className="enhancement-type">5차 강화:</span>
-                      <span className="enhancement-value fifth">{enhancement.fifthLevel}레벨</span>
-                    </div>
-                    <div className="enhancement-item">
-                      <span className="enhancement-type">6차 강화:</span>
-                      <span className="enhancement-value sixth">{enhancement.sixthLevel}레벨</span>
-                    </div>
+                    {canFifth && (
+                      <div className="enhancement-item">
+                        <span className="enhancement-type">5차 강화:</span>
+                        <span className="enhancement-value fifth">{enhancement.fifthLevel}레벨</span>
+                      </div>
+                    )}
+                    {canSixth && (
+                      <div className="enhancement-item">
+                        <span className="enhancement-type">6차 강화:</span>
+                        <span className="enhancement-value sixth">{enhancement.sixthLevel}레벨</span>
+                      </div>
+                    )}
                     {finalDamage > 0 && (
                       <div className="enhancement-item final">
                         <span className="enhancement-type">최종 데미지:</span>
                         <span className="enhancement-value final">+{finalDamage}%</span>
                       </div>
                     )}
+                    {isDependentSkill(selectedSkill.id) && (
+                      <div className="dependent-info">
+                        <span className="dependent-note">
+                          🔗 이 스킬의 6차 강화는 다른 스킬을 따라갑니다.
+                        </span>
+                      </div>
+                    )}
                   </div>
                 );
               })()}
               
-              <div className="enhancement-edit-hint">
-                💡 더블클릭으로 강화 레벨 수정
-              </div>
+              {(canEnhanceLevel(selectedSkill, 'fifth') || canEnhanceLevel(selectedSkill, 'sixth')) && (
+                <div className="enhancement-edit-hint">
+                  💡 더블클릭으로 강화 레벨 수정
+                </div>
+              )}
             </div>
           </div>
 
@@ -398,6 +464,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                       value={enhancement.fifthLevel}
                       onChange={(e) => updateSkillEnhancement(editingSkill, 'fifthLevel', Number(e.target.value))}
                       className="level-input"
+                      disabled={!canEnhanceLevel(editingSkillData, 'fifth')}
                     />
                   </div>
                   <div className="control-row">
@@ -409,12 +476,17 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                       value={enhancement.sixthLevel}
                       onChange={(e) => updateSkillEnhancement(editingSkill, 'sixthLevel', Number(e.target.value))}
                       className="level-input"
-                      disabled={isDependent}
+                      disabled={!canEnhanceLevel(editingSkillData, 'sixth') || isDependent}
                     />
                   </div>
-                  {isDependent && (
+                  {!canEnhanceLevel(editingSkillData, 'fifth') && !canEnhanceLevel(editingSkillData, 'sixth') && (
+                    <div className="no-enhancement-note">
+                      ⚠️ 강화 불가능한 스킬
+                    </div>
+                  )}
+                  {isDependent && canEnhanceLevel(editingSkillData, 'sixth') && (
                     <div className="dependent-note">
-                      ⚠️ 다른 스킬에 종속됨
+                      🔗 다른 스킬에 종속됨
                     </div>
                   )}
                 </div>
