@@ -7,7 +7,7 @@ import { StatsComponent } from '../components/StatsComponent';
 import { TimeComponent } from '../components/TimeComponent';
 import { StateComponent } from '../components/StateComponent';
 import { SkillComponent } from '../components/SkillComponent';
-import { EnhancementComponent } from '../components/EnhancementComponent';
+import { LearnedSkillsComponent } from '../components/LearnedSkillsComponent';
 import { SummonComponent } from '../components/SummonComponent';
 import { EnemyStatsComponent } from '../components/EnemyStatsComponent';
 import { LUMINOUS_SKILLS } from '../../data/skills';
@@ -149,7 +149,7 @@ export class DamageSystem extends System {
     const casterStats = this.world.getComponent<StatsComponent>(casterEntity, 'stats');
     const casterState = this.world.getComponent<StateComponent>(casterEntity, 'state');
     const casterBuff = this.world.getComponent<BuffComponent>(casterEntity, 'buff');
-    const casterEnhancement = this.world.getComponent<EnhancementComponent>(casterEntity, 'enhancement');
+    const learnedSkills = this.world.getComponent<LearnedSkillsComponent>(casterEntity, 'learnedSkills');
     const targetStats = this.world.getComponent<EnemyStatsComponent>(targetEntity, 'enemyStats');
 
     if (!casterStats || !targetStats) {
@@ -158,7 +158,7 @@ export class DamageSystem extends System {
     }
 
     // 2. 강화 적용된 스킬 데이터 가져오기
-    const enhancedSkillData = casterEnhancement?.getEnhancedSkillData(skillDef) || skillDef;
+    const enhancedSkillData = this.getEnhancedSkillData(skillDef, learnedSkills, casterState?.currentState);
     calculationLog.push(`기본 퍼뎀: ${skillDef.damage}% → 강화 후: ${enhancedSkillData.damage}%`);
 
     // 3. 추가타 정보 계산
@@ -175,7 +175,7 @@ export class DamageSystem extends System {
       enhancedSkillData,
       casterStats,
       casterBuff,
-      casterEnhancement
+      learnedSkills
     );
     calculationLog.push(`최종 퍼뎀: ${modifiers.enhancedDamagePercent}%`);
     calculationLog.push(`데미지 증가: ×${modifiers.damageIncreaseMultiplier.toFixed(3)}`);
@@ -258,13 +258,68 @@ export class DamageSystem extends System {
     };
   }
 
+  // LearnedSkillsComponent를 사용하여 강화된 스킬 데이터 가져오기
+  private getEnhancedSkillData(
+    baseSkillDef: SkillData, 
+    learnedSkills?: LearnedSkillsComponent,
+    currentState?: LuminousState
+  ): SkillData {
+    let enhancedData = { ...baseSkillDef };
+
+    if (!learnedSkills) return enhancedData;
+
+    // 1. 동적 스킬 처리 (트노바 등)
+    if (baseSkillDef.isDynamic && baseSkillDef.getDynamicProperties && currentState) {
+      const dynamicProps = baseSkillDef.getDynamicProperties(currentState);
+      enhancedData = { ...enhancedData, ...dynamicProps };
+    }
+
+    // 2. 6차 마스터리 스킬 오버라이드 확인
+    const masterySkillId = `${baseSkillDef.id}_mastery`;
+    const masteryLevel = learnedSkills.getSkillLevel(masterySkillId);
+    
+    if (masteryLevel > 0) {
+      const masterySkill = LUMINOUS_SKILLS.find(s => s.id === masterySkillId);
+      
+      if (masterySkill?.passiveEffects) {
+        masterySkill.passiveEffects.forEach(effect => {
+          if (effect.targetSkillId === baseSkillDef.id && effect.effectType === 'skill_override' && effect.overrideData) {
+            // 각 속성별로 오버라이드 적용
+            Object.entries(effect.overrideData).forEach(([property, values]) => {
+              if (Array.isArray(values) && values[masteryLevel] !== null && values[masteryLevel] !== undefined) {
+                // 동적 스킬의 상태별 속성 처리
+                if (property.includes('Light') || property.includes('Dark') || property.includes('Equilibrium')) {
+                  const statePrefix = property.replace('damage', '').toLowerCase();
+                  if (currentState?.toLowerCase().includes(statePrefix)) {
+                    enhancedData.damage = values[masteryLevel];
+                  }
+                } else {
+                  // 일반 속성 오버라이드
+                  (enhancedData as any)[property] = values[masteryLevel];
+                }
+              }
+            });
+          }
+        });
+      }
+    }
+
+    // 3. 5차 강화 배율 적용
+    const fifthMultiplier = learnedSkills.getFifthEnhancementMultiplier(baseSkillDef.id);
+    if (fifthMultiplier > 1 && enhancedData.damage) {
+      enhancedData.damage = Math.floor(enhancedData.damage * fifthMultiplier);
+    }
+
+    return enhancedData;
+  }
+
   // 모든 데미지 수정자 계산
   private calculateAllDamageModifiers(
     casterEntity: any,
     skillData: SkillData,
     statsComp: StatsComponent,
     buffComp?: BuffComponent,
-    enhancementComp?: EnhancementComponent
+    learnedSkills?: LearnedSkillsComponent
   ): DamageModifiers {
     const stats = statsComp.stats;
     
@@ -288,16 +343,16 @@ export class DamageSystem extends System {
       });
     }
 
-    // 3. 강화 효과들
-    if (enhancementComp) {
-      // 최종 데미지 보너스 (6차 패시브)
-      const finalDamageBonus = enhancementComp.getFinalDamageIncrease(skillData.id);
-      if (finalDamageBonus > 0) {
-        finalDamageMultiplier *= (1 + finalDamageBonus / 100);
+    // 3. 패시브 강화 효과들
+    if (learnedSkills) {
+      // 6차 최종 데미지 보너스
+      const sixthFinalDamage = learnedSkills.getSixthFinalDamageBonus(skillData.id);
+      if (sixthFinalDamage > 0) {
+        finalDamageMultiplier *= (1 + sixthFinalDamage / 100);
       }
 
-      // 다른 스킬의 영향 (affectsOtherSkills)
-      const otherSkillBonus = enhancementComp.getAffectedSkillBonus(skillData.id);
+      // 다른 스킬의 영향 (예: 라리VI → 앱킬 데미지 증가)
+      const otherSkillBonus = learnedSkills.getAffectedSkillBonus(skillData.id);
       if (otherSkillBonus > 0) {
         enhancedDamagePercent += otherSkillBonus;
       }
@@ -533,7 +588,8 @@ export class DamageSystem extends System {
 
     const casterStats = this.world.getComponent<StatsComponent>(casterEntity, 'stats');
     const casterBuff = this.world.getComponent<BuffComponent>(casterEntity, 'buff');
-    const casterEnhancement = this.world.getComponent<EnhancementComponent>(casterEntity, 'enhancement');
+    const learnedSkills = this.world.getComponent<LearnedSkillsComponent>(casterEntity, 'learnedSkills');
+    const casterState = this.world.getComponent<StateComponent>(casterEntity, 'state');
     
     if (!casterStats) {
       return {
@@ -545,13 +601,13 @@ export class DamageSystem extends System {
       };
     }
 
-    const enhancedSkillData = casterEnhancement?.getEnhancedSkillData(skillDef) || skillDef;
+    const enhancedSkillData = this.getEnhancedSkillData(skillDef, learnedSkills, casterState?.currentState);
     const modifiers = this.calculateAllDamageModifiers(
       casterEntity,
       enhancedSkillData,
       casterStats,
       casterBuff,
-      casterEnhancement
+      learnedSkills
     );
 
     // 대략적인 데미지 범위 계산 (크리/숙련도 고려)
