@@ -9,12 +9,12 @@ import { BuffComponent } from '../ecs/components/BuffComponent';
 import { DamageComponent } from '../ecs/components/DamageComponent';
 import { TimeComponent } from '../ecs/components/TimeComponent';
 import { StatsComponent } from '../ecs/components/StatsComponent';
-import { EnhancementComponent } from '../ecs/components/EnhancementComponent';
+import { LearnedSkillsComponent } from '../ecs/components/LearnedSkillsComponent'; // EnhancementComponent 대체
 import { ActionDelayComponent } from '../ecs/components/ActionDelayComponent';
-import { LUMINOUS_SKILLS } from '../data/skills';
+// 데이터 타입들
 import type { CharacterStats, SkillEnhancement } from '../data/types/characterTypes';
-import type { EnhancementSettings } from '../data/enhancements/types';
 import type { SkillData as ECSSkillData } from '../ecs/components/SkillComponent';
+import { LUMINOUS_SKILLS } from '../data/skills';
 
 interface LuminousCharacterData {
   entity: Entity;
@@ -25,7 +25,7 @@ interface LuminousCharacterData {
   damage: DamageComponent;
   time: TimeComponent;
   stats: StatsComponent;
-  enhancement: EnhancementComponent;
+  learnedSkills: LearnedSkillsComponent; // enhancement 대체
   actionDelay: ActionDelayComponent;
 }
 
@@ -43,18 +43,6 @@ const convertToECSSkillData = (stats?: CharacterStats): ECSSkillData[] => {
       isAvailable: true
     };
   });
-};
-
-// 캐릭터 스킬 강화 설정을 EnhancementSettings로 변환
-const convertToEnhancementSettings = (skillEnhancements: SkillEnhancement[]): EnhancementSettings => {
-  const settings: EnhancementSettings = {};
-  skillEnhancements.forEach(enhancement => {
-    settings[enhancement.skillId] = {
-      fifthLevel: enhancement.fifthLevel,
-      sixthLevel: enhancement.sixthLevel
-    };
-  });
-  return settings;
 };
 
 export function useLuminousCharacter(
@@ -125,8 +113,18 @@ export function useLuminousCharacter(
     const damageComp = new DamageComponent();
     const timeComp = new TimeComponent();
     const statsComp = new StatsComponent(stats);
-    const enhancementComp = new EnhancementComponent(convertToEnhancementSettings(enhancements));
     const actionDelayComp = new ActionDelayComponent();
+    const learnedSkillsComp = new LearnedSkillsComponent();
+    
+    // 1. 모든 액티브 스킬 습득
+    LUMINOUS_SKILLS
+      .filter(skill => skill.canDirectUse !== false && skill.category !== 'passive_enhancement')
+      .forEach(skill => {
+        learnedSkillsComp.learnSkill(skill.id, 1, 'active');
+      });
+    
+    // 2. 강화 설정에 따라 패시브 스킬들 업데이트
+    learnedSkillsComp.updateFromEnhancements(enhancements);
 
     world.addComponent(entity, stateComp);
     world.addComponent(entity, gaugeComp);
@@ -135,8 +133,8 @@ export function useLuminousCharacter(
     world.addComponent(entity, damageComp);
     world.addComponent(entity, timeComp);
     world.addComponent(entity, statsComp);
-    world.addComponent(entity, enhancementComp);
     world.addComponent(entity, actionDelayComp);
+    world.addComponent(entity, learnedSkillsComp);
 
     // 이퀼리브리엄 진입시 이벤트 리스너 등록
     const onEquilibriumEnter = (eventType: string, e: Entity) => {
@@ -159,7 +157,7 @@ export function useLuminousCharacter(
       damage: damageComp,
       time: timeComp,
       stats: statsComp,
-      enhancement: enhancementComp,
+      learnedSkills: learnedSkillsComp,
       actionDelay: actionDelayComp
     });
 

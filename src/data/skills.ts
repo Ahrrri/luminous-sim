@@ -686,7 +686,7 @@ export const LUMINOUS_SKILLS: SkillData[] = [
 
   // 빛과 어둠의 세례 VI
   {
-    id: 'baptism_mastery',
+    id: 'baptism_of_light_and_darkness_mastery',
     name: '빛과 어둠의 세례 VI',
     icon: '🌟',
     element: 'NONE',
@@ -712,7 +712,7 @@ export const LUMINOUS_SKILLS: SkillData[] = [
 
   // 퍼니싱 리소네이터 VI
   {
-    id: 'punishing_mastery',
+    id: 'punishing_resonator_mastery',
     name: '퍼니싱 리소네이터 VI',
     icon: '🌟',
     element: 'NONE',

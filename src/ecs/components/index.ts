@@ -18,6 +18,7 @@ export { TimeComponent } from './TimeComponent';
 
 export { StatsComponent } from './StatsComponent';
 
+export { EnemyStatsComponent } from './EnemyStatsComponent';
 export { LearnedSkillsComponent } from './LearnedSkillsComponent';
 export { ActionDelayComponent } from './ActionDelayComponent';
 export { SummonComponent } from './SummonComponent';
