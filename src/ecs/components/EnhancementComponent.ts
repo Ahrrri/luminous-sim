@@ -1,7 +1,6 @@
 // src/ecs/components/EnhancementComponent.ts
 import { BaseComponent } from '../core/Component';
 import { ENHANCEMENT_DATA } from '../../data/enhancements/enhancementData';
-import { LINEAR_PATTERNS, PREDEFINED_PATTERNS } from '../../data/enhancements/enhancementPatterns';
 import type { EnhancementSettings, AppliedEnhancement } from '../../data/enhancements/types';
 import type { SkillData } from '../../data/types/skillTypes';
 
@@ -60,9 +59,12 @@ export class EnhancementComponent extends BaseComponent {
       overriddenSkillData: {}
     };
 
-    // 5차 강화 계산
+    // 5차 강화 계산 - 배열에서 직접 가져오기
     if (enhancementData.fifth && setting.fifthLevel > 0) {
-      applied.fifthMultiplier = 1 + (setting.fifthLevel * enhancementData.fifth.rate);
+      const fifthValue = enhancementData.fifth[setting.fifthLevel];
+      if (fifthValue !== undefined && fifthValue !== null) {
+        applied.fifthMultiplier = fifthValue / 100; // 120 → 1.2
+      }
     }
 
     // 6차 강화 계산
@@ -75,44 +77,67 @@ export class EnhancementComponent extends BaseComponent {
 
   // 6차 강화 효과 계산
   private calculate6thEnhancement(applied: AppliedEnhancement, sixthData: any, level: number): void {
-    switch (sixthData.type) {
-      case 'final_damage':
-        if (sixthData.pattern) {
-          const levels = PREDEFINED_PATTERNS[sixthData.pattern as keyof typeof PREDEFINED_PATTERNS];
-          applied.sixthFinalDamage = levels[level];
-        } else if (sixthData.levels) {
-          applied.sixthFinalDamage = sixthData.levels[level];
-        }
-        break;
+    // 배열 형태의 최종 데미지 증가 (세례, 퍼니싱 등)
+    if (Array.isArray(sixthData)) {
+      const finalDamage = sixthData[level];
+      if (finalDamage !== undefined && finalDamage !== null) {
+        applied.sixthFinalDamage = finalDamage;
+      }
+      return;
+    }
 
-      case 'damage_multiplier':
-        if (sixthData.pattern) {
-          const levels = PREDEFINED_PATTERNS[sixthData.pattern as keyof typeof PREDEFINED_PATTERNS];
-          applied.fifthMultiplier *= (1 + levels[level] / 100);
-        } else if (sixthData.levels) {
-          applied.fifthMultiplier *= (1 + sixthData.levels[level] / 100);
+    // 스킬 데이터 오버라이드 형태 (라리플, 아포, 앱킬 등)
+    if (typeof sixthData === 'object' && sixthData !== null) {
+      applied.overriddenSkillData = {};
+      
+      // 데미지 오버라이드
+      if ('damage' in sixthData && Array.isArray(sixthData.damage)) {
+        const overrideDamage = sixthData.damage[level];
+        if (overrideDamage !== undefined && overrideDamage !== null) {
+          applied.overriddenSkillData!.damage = overrideDamage;
         }
-        break;
+      }
+      
+      // 게이지 충전 오버라이드
+      if ('gaugeCharge' in sixthData && Array.isArray(sixthData.gaugeCharge)) {
+        const overrideGauge = sixthData.gaugeCharge[level];
+        if (overrideGauge !== undefined && overrideGauge !== null) {
+          applied.overriddenSkillData!.gaugeCharge = overrideGauge;
+        }
+      }
+      
+      // 쿨타임 오버라이드
+      if ('cooldown' in sixthData && Array.isArray(sixthData.cooldown)) {
+        const overrideCooldown = sixthData.cooldown[level];
+        if (overrideCooldown !== undefined && overrideCooldown !== null) {
+          applied.overriddenSkillData!.cooldown = overrideCooldown;
+        }
+      }
+      
+      // 추가 방어율 무시 오버라이드
+      if ('additionalIgnoreDefense' in sixthData && Array.isArray(sixthData.additionalIgnoreDefense)) {
+        const overrideIgnoreDef = sixthData.additionalIgnoreDefense[level];
+        if (overrideIgnoreDef !== undefined && overrideIgnoreDef !== null) {
+          applied.overriddenSkillData!.additionalIgnoreDefense = overrideIgnoreDef;
+        }
+      }
+    }
 
-      case 'skill_data_override':
-        if (sixthData.overrides) {
-          applied.overriddenSkillData = {};
-          Object.entries(sixthData.overrides).forEach(([key, config]: [string, any]) => {
-            if (config.levels) {
-              applied.overriddenSkillData![key] = config.levels[level];
-            } else if (config.base !== undefined && config.increment !== undefined) {
-              applied.overriddenSkillData![key] = Math.floor(config.base + (level * config.increment));
-            }
-          });
-        }
-        break;
+    // 상태별 오버라이드 처리 (트와일라잇 노바)
+    if (typeof sixthData === 'object' && sixthData !== null &&
+        ('light' in sixthData || 'dark' in sixthData || 'equilibrium' in sixthData)) {
+      // 상태별 데이터는 런타임에 현재 상태에 따라 결정되므로
+      // 여기서는 메타데이터만 저장하고 실제 적용은 시뮬레이션에서
+      applied.overriddenSkillData!.isDynamic = true;
+      applied.overriddenSkillData!.dynamicData = sixthData;
     }
   }
 
   // 종속 스킬들 업데이트 (이터널/엔드리스)
   private updateDependentSkills(parentSkillId: string): void {
     Object.entries(ENHANCEMENT_DATA).forEach(([skillId, data]) => {
-      if (data.sixth?.dependsOn === parentSkillId) {
+      // 종속 관계 확인 - 타입 안전하게
+      if (data.dependsOn === parentSkillId) {
         // 부모 스킬의 6차 레벨을 가져와서 적용
         const parentSetting = this.settings[parentSkillId];
         if (parentSetting) {
@@ -134,7 +159,7 @@ export class EnhancementComponent extends BaseComponent {
 
     const enhanced = { ...baseSkillData };
 
-    // 기본 퍼뎀에 5차/6차 배율 적용
+    // 기본 퍼뎀에 5차 배율 적용
     if (enhanced.damage && applied.fifthMultiplier !== 1) {
       enhanced.damage = Math.floor(enhanced.damage * applied.fifthMultiplier);
     }
@@ -145,6 +170,35 @@ export class EnhancementComponent extends BaseComponent {
     }
 
     return enhanced;
+  }
+
+  // 다른 스킬에 미치는 영향 계산 (affectsOtherSkills)
+  getAffectedSkillBonus(targetSkillId: string): number {
+    let totalBonus = 0;
+    
+    Object.entries(ENHANCEMENT_DATA).forEach(([sourceSkillId, sourceData]) => {
+      const sourceSetting = this.settings[sourceSkillId];
+      if (sourceSetting && sourceSetting.sixthLevel > 0 && sourceData.sixth) {
+        const sixthData = sourceData.sixth;
+        
+        // affectsOtherSkills 확인 - 타입 안전하게
+        if (typeof sixthData === 'object' && !Array.isArray(sixthData) && 
+            'affectsOtherSkills' in sixthData) {
+          const affects = sixthData.affectsOtherSkills;
+          if (affects && affects[targetSkillId]) {
+            const skillEffect = affects[targetSkillId];
+            if (skillEffect.damageIncrease && Array.isArray(skillEffect.damageIncrease)) {
+              const increase = skillEffect.damageIncrease[sourceSetting.sixthLevel];
+              if (increase !== undefined && increase !== null) {
+                totalBonus += increase;
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    return totalBonus;
   }
 
   // 특정 스킬의 적용된 강화 정보 가져오기

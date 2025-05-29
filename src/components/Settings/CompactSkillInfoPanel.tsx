@@ -13,12 +13,7 @@ interface CompactSkillInfoPanelProps {
   onSkillEnhancementChange: (enhancements: SkillEnhancement[]) => void;
 }
 
-interface TooltipData {
-  skill: SkillData;
-  enhancement: SkillEnhancement;
-  x: number;
-  y: number;
-}
+// TooltipData 제거 - 사용하지 않음
 
 export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
   bossStats,
@@ -43,7 +38,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     
     if (field === 'sixthLevel') {
       Object.entries(ENHANCEMENT_DATA).forEach(([dependentSkillId, data]) => {
-        if (data.sixth?.dependsOn === skillId) {
+        if (data.dependsOn === skillId) {
           skillsToUpdate.push(dependentSkillId);
         }
       });
@@ -62,7 +57,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     // 4. 종속 스킬들 업데이트
     if (field === 'sixthLevel') {
       Object.entries(ENHANCEMENT_DATA).forEach(([dependentSkillId, data]) => {
-        if (data.sixth?.dependsOn === skillId) {
+        if (data.dependsOn === skillId) {
           const dependentEnhancement = getSkillEnhancement(dependentSkillId);
           updatedEnhancements.push({
             ...dependentEnhancement,
@@ -81,6 +76,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     enhancedDamage: number;
     fifthMultiplier: number;
     sixthBonus: number;
+    affectedByOthers: number;
   } => {
     const enhancement = getSkillEnhancement(skill.id);
     const enhancementData = ENHANCEMENT_DATA[skill.id];
@@ -88,34 +84,67 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     let baseDamage = skill.damage || 0;
     let fifthMultiplier = 1;
     let sixthBonus = 0;
+    let affectedByOthers = 0;
     
-    // 5차 강화 효과
+    // 5차 강화 효과 - 배열에서 직접 가져오기
     if (enhancementData?.fifth && enhancement.fifthLevel > 0 && skill.canEnhanceFifth !== false) {
-      fifthMultiplier = 1 + (enhancement.fifthLevel * enhancementData.fifth.rate);
-    }
-    
-    // 6차 강화 효과
-    if (enhancementData?.sixth && enhancement.sixthLevel > 0 && skill.canEnhanceSixth !== false) {
-      if (enhancementData.sixth.type === 'skill_data_override' && enhancementData.sixth.overrides?.damage) {
-        const overrideConfig = enhancementData.sixth.overrides.damage;
-        if (overrideConfig.base !== undefined && overrideConfig.increment !== undefined) {
-          baseDamage = Math.floor(overrideConfig.base + (enhancement.sixthLevel * overrideConfig.increment));
-        }
-      } else if (enhancementData.sixth.pattern && enhancementData.sixth.type === 'damage_multiplier') {
-        const levels = PREDEFINED_PATTERNS[enhancementData.sixth.pattern as keyof typeof PREDEFINED_PATTERNS];
-        if (levels) {
-          sixthBonus = levels[enhancement.sixthLevel] || 0;
-        }
+      const fifthData = enhancementData.fifth[enhancement.fifthLevel];
+      if (fifthData) {
+        fifthMultiplier = fifthData / 100; // 120 → 1.2
       }
     }
     
-    const enhancedDamage = Math.floor(baseDamage * fifthMultiplier * (1 + sixthBonus / 100));
+    // 6차 강화 효과 - 타입 안전하게 처리
+    if (enhancementData?.sixth && enhancement.sixthLevel > 0 && skill.canEnhanceSixth !== false) {
+      const sixthData = enhancementData.sixth;
+      
+      // 스킬 데이터 오버라이드 타입인 경우
+      if (typeof sixthData === 'object' && !Array.isArray(sixthData) && 'damage' in sixthData) {
+        const damageArray = sixthData.damage;
+        if (Array.isArray(damageArray)) {
+          const overrideDamage = damageArray[enhancement.sixthLevel];
+          if (overrideDamage !== null && overrideDamage !== undefined) {
+            baseDamage = overrideDamage;
+          }
+        }
+      }
+      
+      // 최종 데미지 증가가 배열로 있는 경우 (세례, 퍼니싱 등)
+      if (Array.isArray(sixthData) && sixthData[enhancement.sixthLevel] !== undefined) {
+        sixthBonus = sixthData[enhancement.sixthLevel];
+      }
+    }
+    
+    // 다른 스킬의 영향 계산 (affectsOtherSkills)
+    Object.entries(ENHANCEMENT_DATA).forEach(([sourceSkillId, sourceData]) => {
+      const sourceEnhancement = getSkillEnhancement(sourceSkillId);
+      if (sourceEnhancement.sixthLevel > 0 && sourceData.sixth) {
+        const sixthData = sourceData.sixth;
+        
+        // affectsOtherSkills가 있는지 타입 안전하게 확인
+        if (typeof sixthData === 'object' && !Array.isArray(sixthData) && 'affectsOtherSkills' in sixthData) {
+          const affects = sixthData.affectsOtherSkills;
+          if (affects && affects[skill.id]) {
+            const skillEffect = affects[skill.id];
+            if (skillEffect.damageIncrease && Array.isArray(skillEffect.damageIncrease)) {
+              const increase = skillEffect.damageIncrease[sourceEnhancement.sixthLevel];
+              if (increase !== null && increase !== undefined) {
+                affectedByOthers += increase;
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    const enhancedDamage = Math.floor(baseDamage * fifthMultiplier * (1 + sixthBonus / 100) * (1 + affectedByOthers / 100));
     
     return {
       baseDamage,
       enhancedDamage,
       fifthMultiplier,
-      sixthBonus
+      sixthBonus,
+      affectedByOthers
     };
   };
 
@@ -127,11 +156,9 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     const enhancement = getSkillEnhancement(skillId);
     const enhancementData = ENHANCEMENT_DATA[skillId];
     
-    if (enhancementData?.sixth?.type === 'final_damage' && enhancement.sixthLevel > 0) {
-      if (enhancementData.sixth.pattern) {
-        const levels = PREDEFINED_PATTERNS[enhancementData.sixth.pattern as keyof typeof PREDEFINED_PATTERNS];
-        return levels[enhancement.sixthLevel] || 0;
-      }
+    // 6차 강화가 배열 형태로 최종 데미지를 제공하는 경우
+    if (enhancementData?.sixth && Array.isArray(enhancementData.sixth) && enhancement.sixthLevel > 0) {
+      return enhancementData.sixth[enhancement.sixthLevel] || 0;
     }
     return 0;
   };
@@ -150,7 +177,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
   // 종속 스킬인지 확인
   const isDependentSkill = (skillId: string): boolean => {
     const enhancementData = ENHANCEMENT_DATA[skillId];
-    return !!enhancementData?.sixth?.dependsOn;
+    return !!enhancementData?.dependsOn;
   };
 
   // 강화 가능 여부 확인
@@ -319,6 +346,12 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                           <div className="detail-item">
                             <span className="detail-label">강화 퍼뎀:</span>
                             <span className="detail-value enhanced">{calc.enhancedDamage}%</span>
+                          </div>
+                        )}
+                        {calc.affectedByOthers > 0 && (
+                          <div className="detail-item">
+                            <span className="detail-label">타 스킬 영향:</span>
+                            <span className="detail-value enhanced">+{calc.affectedByOthers}%</span>
                           </div>
                         )}
                       </>
