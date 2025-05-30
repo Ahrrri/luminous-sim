@@ -126,7 +126,7 @@ export interface SkillData {
   
   // 레벨별 효과 배열 (필요시 사용)
   effects?: {
-    [effectType: string]: number[];  // 인덱스 = 레벨 (0은 효과 없음)
+    [effectType: string]: (number | null)[];  // 인덱스 = 레벨 (0은 효과 없음)
   };
   
   // 다른 스킬에 미치는 영향 (예: 라리VI가 앱킬에 주는 보너스)

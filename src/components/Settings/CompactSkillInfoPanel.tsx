@@ -17,7 +17,7 @@ import {
 } from '../../ecs/components';
 import { DamageSystem } from '../../ecs/systems/DamageSystem';
 import type { CharacterStats, BossStats, SkillEnhancement } from '../../data/types/characterTypes';
-import type { SkillData } from '../../data/types/skillTypes';
+import type { SkillData, LuminousState } from '../../data/types/skillTypes';
 import './CompactSkillInfoPanel.css';
 
 interface CompactSkillInfoPanelProps {
@@ -25,6 +25,17 @@ interface CompactSkillInfoPanelProps {
   bossStats: BossStats;
   skillEnhancements: SkillEnhancement[];
   onSkillEnhancementChange: (enhancements: SkillEnhancement[]) => void;
+}
+
+interface DynamicSkillVariant {
+  state: LuminousState;
+  stateName: string;
+  hasData: boolean;
+  finalDamage: number;
+  totalDamage: number;
+  hitCount: number;
+  calculationSteps: any[];
+  damageInfo?: any;
 }
 
 export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
@@ -35,7 +46,6 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
 }) => {
   const { world } = useECS();
   const [selectedSkill, setSelectedSkill] = useState<SkillData>(LUMINOUS_SKILLS[0]);
-  const [editingSkill, setEditingSkill] = useState<string | null>(null);
 
   // 스킬별 강화 정보 가져오기
   const getSkillEnhancement = (skillId: string): SkillEnhancement => {
@@ -71,28 +81,35 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
     onSkillEnhancementChange(updatedEnhancements);
   };
 
-  // Mock Entity를 사용한 실제 ECS 계산
-  const calculateWithECS = useMemo(() => {
-    if (!selectedSkill.damage) {
-      return {
-        hasData: false,
-        finalDamage: 0,
-        totalDamage: 0,
-        hitCount: 1,
-        calculationSteps: []
-      };
-    }
+  // 스킬이 데미지 데이터를 가지고 있는지 확인
+  const hasDamageData = (skill: SkillData): boolean => {
+    // 일반 스킬의 damage 속성
+    if (skill.damage && skill.damage > 0) return true;
+    
+    // 동적 스킬의 getDynamicProperties
+    if (skill.isDynamic && skill.getDynamicProperties) return true;
+    
+    // 리버레이션 오브의 특수 속성들
+    if (skill.damagePassive || skill.damageActive || skill.damageActiveImbalance) return true;
+    
+    return false;
+  };
 
-    // 1. 임시 Entity 생성
+  // 단일 상태에 대한 ECS 계산 수행
+  const calculateSingleState = (skill: SkillData, state: LuminousState): DynamicSkillVariant => {
+    const stateName = state === 'LIGHT' ? '빛' : 
+                     state === 'DARK' ? '어둠' : '이퀼리브리엄';
+
+    // 임시 Entity 생성
     const mockEntity = world.createEntity();
     const targetEntity = world.createEntity();
     
     try {
-      // 2. 필요한 컴포넌트들 추가
+      // 필요한 컴포넌트들 추가
       const mockStats = new StatsComponent(characterStats);
       const mockTime = new TimeComponent();
       const mockDamage = new DamageComponent();
-      const mockState = new StateComponent('LIGHT'); // 기본 빛 상태
+      const mockState = new StateComponent(state); // 지정된 상태로 설정
       const mockGauge = new GaugeComponent();
       const mockBuff = new BuffComponent();
       const mockActionDelay = new ActionDelayComponent();
@@ -112,10 +129,10 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
       
       // ECS 스킬 데이터 변환
       const ecsSkillData = {
-        id: selectedSkill.id,
-        name: selectedSkill.name,
+        id: skill.id,
+        name: skill.name,
         cooldown: 0,
-        maxCooldown: selectedSkill.cooldown,
+        maxCooldown: skill.cooldown,
         isAvailable: true
       };
       const mockSkill = new SkillComponent([ecsSkillData], characterStats);
@@ -141,64 +158,88 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
       
       world.addComponent(targetEntity, targetStats);
 
-      // 3. 실제 ECS 시스템으로 데미지 정보 가져오기
+      // 실제 ECS 시스템으로 데미지 정보 가져오기
       const damageSystem = world.getSystem<DamageSystem>('DamageSystem');
       
       if (damageSystem) {
         const damageInfo = damageSystem.getSkillDamageInfo(
           mockEntity,
           targetEntity,
-          selectedSkill.id
+          skill.id
         );
 
-        // 4. 계산 단계 분석
+        // 동적 스킬의 경우 상태별 속성 확인
+        let actualDamage = damageInfo.baseDamage;
+        let actualHitCount = skill.hitCount || 1;
+
+        if (skill.isDynamic && skill.getDynamicProperties) {
+          const dynamicProps = skill.getDynamicProperties(state);
+          actualDamage = dynamicProps.damage || actualDamage;
+          actualHitCount = dynamicProps.hitCount || actualHitCount;
+        }
+
+        // 계산 단계 분석
         const calculationSteps = [];
         
         // 기본 퍼뎀
         calculationSteps.push({
           label: '기본 퍼뎀',
-          value: `${damageInfo.baseDamage}%`,
+          value: `${actualDamage}%`,
           type: 'base'
         });
 
-        // 강화된 퍼뎀 (6차 오버라이드 또는 5차 강화 적용)
-        if (damageInfo.enhancedDamage !== damageInfo.baseDamage) {
-          const enhancement = getSkillEnhancement(selectedSkill.id);
-          
-          // 6차 마스터리 체크
-          if (enhancement.sixthLevel > 0) {
-            const masterySkill = LUMINOUS_SKILLS.find(s => s.id === `${selectedSkill.id}_mastery`);
-            if (masterySkill?.passiveEffects) {
-              const overrideEffect = masterySkill.passiveEffects.find(e => 
-                e.effectType === 'skill_override' && e.targetSkillId === selectedSkill.id
-              );
-              if (overrideEffect?.overrideData?.damage) {
+        // 강화된 퍼뎀 체크
+        const enhancement = getSkillEnhancement(skill.id);
+        
+        // 6차 마스터리 체크
+        if (enhancement.sixthLevel > 0) {
+          const masterySkill = LUMINOUS_SKILLS.find(s => s.id === `${skill.id}_mastery`);
+          if (masterySkill?.passiveEffects) {
+            const overrideEffect = masterySkill.passiveEffects.find(e => 
+              e.effectType === 'skill_override' && e.targetSkillId === skill.id
+            );
+            if (overrideEffect?.overrideData) {
+              // 동적 스킬의 상태별 오버라이드 처리
+              let overrideValue = null;
+              const overrideData = overrideEffect.overrideData;
+              
+              if (skill.isDynamic) {
+                const stateKey = `damage${state.charAt(0) + state.slice(1).toLowerCase()}`;
+                if (overrideData[stateKey] && Array.isArray(overrideData[stateKey])) {
+                  overrideValue = overrideData[stateKey][enhancement.sixthLevel];
+                }
+              } else if (overrideData.damage && Array.isArray(overrideData.damage)) {
+                overrideValue = overrideData.damage[enhancement.sixthLevel];
+              }
+              
+              if (overrideValue) {
                 calculationSteps.push({
                   label: '6차 Override',
-                  value: `${damageInfo.enhancedDamage}%`,
+                  value: `${overrideValue}%`,
                   note: '(기본값 대체)',
                   type: 'override'
                 });
+                actualDamage = overrideValue;
               }
             }
           }
-          
-          // 5차 강화
-          if (enhancement.fifthLevel > 0) {
-            const fifthMultiplier = mockLearnedSkills.getFifthEnhancementMultiplier(selectedSkill.id);
-            if (fifthMultiplier > 1) {
-              calculationSteps.push({
-                label: '5차 강화',
-                value: `×${fifthMultiplier.toFixed(2)}`,
-                note: `Lv.${enhancement.fifthLevel}`,
-                type: 'fifth'
-              });
-            }
+        }
+        
+        // 5차 강화
+        if (enhancement.fifthLevel > 0) {
+          const fifthMultiplier = mockLearnedSkills.getFifthEnhancementMultiplier(skill.id);
+          if (fifthMultiplier > 1) {
+            calculationSteps.push({
+              label: '5차 강화',
+              value: `×${fifthMultiplier.toFixed(2)}`,
+              note: `Lv.${enhancement.fifthLevel}`,
+              type: 'fifth'
+            });
           }
         }
 
         // 다른 스킬 영향
-        const otherSkillBonus = mockLearnedSkills.getAffectedSkillBonus(selectedSkill.id);
+        const otherSkillBonus = mockLearnedSkills.getAffectedSkillBonus(skill.id);
         if (otherSkillBonus > 0) {
           calculationSteps.push({
             label: '타 스킬 영향',
@@ -209,7 +250,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
         }
 
         // 6차 최종 데미지
-        const sixthFinalDamage = mockLearnedSkills.getSixthFinalDamageBonus(selectedSkill.id);
+        const sixthFinalDamage = mockLearnedSkills.getSixthFinalDamageBonus(skill.id);
         if (sixthFinalDamage > 0) {
           calculationSteps.push({
             label: '6차 최종뎀',
@@ -219,16 +260,20 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
         }
 
         return {
+          state,
+          stateName,
           hasData: true,
-          finalDamage: damageInfo.enhancedDamage,
+          finalDamage: actualDamage,
           totalDamage: damageInfo.estimatedDamageRange.average,
-          hitCount: selectedSkill.hitCount || 1,
+          hitCount: actualHitCount,
           calculationSteps,
           damageInfo
         };
       }
 
       return {
+        state,
+        stateName,
         hasData: false,
         finalDamage: 0,
         totalDamage: 0,
@@ -237,14 +282,30 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
       };
 
     } finally {
-      // 5. 임시 Entity 정리 (중요!)
+      // 임시 Entity 정리
       world.destroyEntity(mockEntity);
       world.destroyEntity(targetEntity);
+    }
+  };
+
+  // 선택된 스킬의 모든 상태별 계산
+  const skillVariants = useMemo(() => {
+    if (!hasDamageData(selectedSkill)) {
+      return null;
+    }
+
+    if (selectedSkill.isDynamic) {
+      // 동적 스킬: 세 가지 상태 모두 계산
+      return ['LIGHT', 'DARK', 'EQUILIBRIUM'].map(state => 
+        calculateSingleState(selectedSkill, state as LuminousState)
+      );
+    } else {
+      // 일반 스킬: 빛 상태로만 계산 (상태 무관)
+      return [calculateSingleState(selectedSkill, 'LIGHT')];
     }
   }, [selectedSkill, skillEnhancements, characterStats, bossStats, world]);
 
   const isDependentSkill = (skillId: string): boolean => {
-    // 이터널은 아포칼립스 VI에, 엔드리스는 리플렉션 VI에 종속
     return skillId === 'eternal_lightness' || skillId === 'endless_darkness';
   };
 
@@ -304,7 +365,6 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                 key={skill.id}
                 className={`compact-skill-card ${skill.element.toLowerCase()} ${isSelected ? 'selected' : ''}`}
                 onClick={() => setSelectedSkill(skill)}
-                onDoubleClick={() => setEditingSkill(skill.id)}
               >
                 <SkillIcon skill={skill} size="medium" />
                 <div className="skill-levels">
@@ -321,7 +381,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
           })}
       </div>
 
-      {/* 선택된 스킬의 상세 계산 (ECS 기반) */}
+      {/* 선택된 스킬의 상세 계산 */}
       <div className="skill-calculation-panel">
         <div className="calc-header">
           <SkillIcon skill={selectedSkill} size="medium" />
@@ -334,6 +394,7 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
                  selectedSkill.element === 'EQUILIBRIUM' ? '이퀼' : '무속성'}
               </span>
               {selectedSkill.isEquilibriumSkill && <span className="eq-badge">이퀼 스킬</span>}
+              {selectedSkill.isDynamic && <span className="dynamic-badge">동적 스킬</span>}
             </div>
           </div>
           <div className="enhancement-controls">
@@ -365,38 +426,50 @@ export const CompactSkillInfoPanel: React.FC<CompactSkillInfoPanelProps> = ({
           </div>
         </div>
 
-        {calculateWithECS.hasData ? (
+        {skillVariants ? (
           <div className="damage-calculation">
-            <div className="calc-steps">
-              {calculateWithECS.calculationSteps.map((step, index) => (
-                <div key={index} className={`calc-step ${step.type}`}>
-                  <span className="step-label">{step.label}:</span>
-                  <span className="step-value">{step.value}</span>
-                  {step.note && <span className="step-note">{step.note}</span>}
+            {skillVariants.map((variant, index) => (
+              <div key={variant.state} className="state-variant">
+                {selectedSkill.isDynamic && (
+                  <div className="variant-header">
+                    <span className={`state-badge state-${variant.state.toLowerCase()}`}>
+                      {variant.stateName} 상태
+                    </span>
+                  </div>
+                )}
+                
+                <div className="calc-steps">
+                  {variant.calculationSteps.map((step, stepIndex) => (
+                    <div key={stepIndex} className={`calc-step ${step.type}`}>
+                      <span className="step-label">{step.label}:</span>
+                      <span className="step-value">{step.value}</span>
+                      {step.note && <span className="step-note">{step.note}</span>}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-            
-            <div className="calc-result">
-              <div className="result-row">
-                <span className="result-label">최종 퍼뎀:</span>
-                <span className="result-value primary">{calculateWithECS.finalDamage}%</span>
+                
+                <div className="calc-result">
+                  <div className="result-row">
+                    <span className="result-label">최종 퍼뎀:</span>
+                    <span className="result-value primary">{variant.finalDamage}%</span>
+                  </div>
+                  {variant.hitCount > 1 && (
+                    <div className="result-row">
+                      <span className="result-label">타수:</span>
+                      <span className="result-value secondary">{variant.hitCount}타</span>
+                    </div>
+                  )}
+                  {variant.damageInfo && (
+                    <div className="result-row">
+                      <span className="result-label">예상 데미지:</span>
+                      <span className="result-value tertiary">
+                        {variant.damageInfo.estimatedDamageRange.min.toLocaleString()} ~ {variant.damageInfo.estimatedDamageRange.max.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
-              {calculateWithECS.hitCount > 1 && (
-                <div className="result-row">
-                  <span className="result-label">타수:</span>
-                  <span className="result-value secondary">{calculateWithECS.hitCount}타</span>
-                </div>
-              )}
-              {calculateWithECS.damageInfo && (
-                <div className="result-row">
-                  <span className="result-label">예상 데미지:</span>
-                  <span className="result-value tertiary">
-                    {calculateWithECS.damageInfo.estimatedDamageRange.min.toLocaleString()} ~ {calculateWithECS.damageInfo.estimatedDamageRange.max.toLocaleString()}
-                  </span>
-                </div>
-              )}
-            </div>
+            ))}
           </div>
         ) : (
           <div className="no-damage-info">

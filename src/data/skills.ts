@@ -3,7 +3,7 @@ import type { SkillData, SkillCategory, LuminousState } from './types/skillTypes
 
 export const LUMINOUS_SKILLS: SkillData[] = [
   // ==================== 4차 액티브 스킬 ====================
-  
+
   // 라이트 리플렉션
   {
     id: 'reflection',
@@ -100,21 +100,21 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     triggersBreathing: true,
     affectedByBuffDuration: false,
     affectedByCooldownReduction: true,
-    canEnhanceFifth: false,  // 5차 강화 없음
+    canEnhanceFifth: true,
     canEnhanceSixth: true,
     isDynamic: true,
     getDynamicProperties: (state: LuminousState) => {
-      switch(state) {
+      switch (state) {
         case 'LIGHT':
         case 'DARK':
-          return { 
+          return {
             damage: 1200,
             hitCount: 7,
             element: state,
             gaugeCharge: 346
           };
         case 'EQUILIBRIUM':
-          return { 
+          return {
             damage: 450,
             hitCount: 6,
             element: 'EQUILIBRIUM',
@@ -228,7 +228,7 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     canEnhanceSixth: true,
     isDynamic: true,
     getDynamicProperties: (state: LuminousState) => {
-      switch(state) {
+      switch (state) {
         case 'LIGHT':
           return { damage: 1155, hitCount: 4 };
         case 'DARK':
@@ -272,7 +272,7 @@ export const LUMINOUS_SKILLS: SkillData[] = [
 
   // ==================== 간접 공격 스킬 ====================
 
-  // 이터널 라이트니스
+  // 이터널 라이트니스 (6차 스킬)
   {
     id: 'eternal_lightness',
     name: '이터널 라이트니스',
@@ -280,29 +280,37 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     iconPath: '/skill-icons/eternal_lightness.png',
     element: 'LIGHT',
     category: 'indirect_attack',
-    damage: 280,
+    maxLevel: 30, // 6차 스킬
     hitCount: 3,
     maxTargets: 6,
     gaugeCharge: 200,
     cooldown: 2000,
-    description: '빛 스킬 적중시 자동 발동되는 추가타',
+    description: '빛 스킬 적중시 자동 발동되는 추가타 (아포칼립스 VI 레벨에 종속)',
     defaultKeyBinding: '',
     isEquilibriumSkill: false,
     canDirectUse: false,
     triggersBreathing: false,
     affectedByBuffDuration: false,
     affectedByCooldownReduction: true,
-    canEnhanceFifth: true,
-    canEnhanceSixth: true,
+    canEnhanceFifth: false,
+    canEnhanceSixth: false, // 6차 마스터리는 없음 (자체가 6차)
+    dependsOn: 'apocalypse_mastery', // 아포칼립스 VI 레벨을 따라감
     triggerConditions: {
       onSkillHit: {
         elements: ['LIGHT'],
         requiredState: ['LIGHT', 'EQUILIBRIUM']
       }
     },
+    effects: {
+      damage: [null, // 0레벨 (미습득)
+        775, 795, 815, 835, 855, 875, 895, 915, 935, 955, // 1-10레벨
+        975, 995, 1015, 1035, 1055, 1075, 1095, 1115, 1135, 1155, // 11-20레벨
+        1175, 1195, 1215, 1235, 1255, 1275, 1295, 1315, 1335, 1355 // 21-30레벨
+      ]
+    }
   },
 
-  // 엔드리스 다크니스
+  // 엔드리스 다크니스 (6차 스킬)
   {
     id: 'endless_darkness',
     name: '엔드리스 다크니스',
@@ -310,26 +318,34 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     iconPath: '/skill-icons/endless_darkness.png',
     element: 'DARK',
     category: 'indirect_attack',
-    damage: 285,
+    maxLevel: 30, // 6차 스킬
     hitCount: 4,
     maxTargets: 6,
     gaugeCharge: 200,
     cooldown: 2000,
-    description: '어둠 스킬 적중시 자동 발동되는 추가타',
+    description: '어둠 스킬 적중시 자동 발동되는 추가타 (라이트 리플렉션 VI 레벨에 종속)',
     defaultKeyBinding: '',
     isEquilibriumSkill: false,
     canDirectUse: false,
     triggersBreathing: false,
     affectedByBuffDuration: false,
     affectedByCooldownReduction: true,
-    canEnhanceFifth: true,
-    canEnhanceSixth: true,
+    canEnhanceFifth: false,
+    canEnhanceSixth: false, // 6차 마스터리는 없음 (자체가 6차)
+    dependsOn: 'reflection_mastery', // 라이트 리플렉션 VI 레벨을 따라감
     triggerConditions: {
       onSkillHit: {
         elements: ['DARK'],
         requiredState: ['DARK', 'EQUILIBRIUM']
       }
     },
+    effects: {
+      damage: [null, // 0레벨 (미습득)
+        855, 880, 905, 930, 955, 980, 1005, 1030, 1055, 1080, // 1-10레벨
+        1105, 1130, 1155, 1180, 1205, 1230, 1255, 1280, 1305, 1330, // 11-20레벨
+        1355, 1380, 1405, 1430, 1455, 1480, 1505, 1530, 1555, 1580 // 21-30레벨
+      ]
+    }
   },
 
   // ==================== 버프/유틸리티 스킬 ====================
@@ -479,10 +495,10 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     description: '앱솔루트 킬의 데미지를 레벨당 2% 증가'
   },
 
-  // 이터널 라이트니스 리인포스
+  // 트와일라잇 노바 리인포스
   {
-    id: 'eternal_lightness_reinforce',
-    name: '이터널 라이트니스 리인포스',
+    id: 'twilight_nova_reinforce',
+    name: '트와일라잇 노바 리인포스',
     icon: '💪',
     element: 'NONE',
     category: 'passive_enhancement',
@@ -494,33 +510,11 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     cooldown: 0,
     canDirectUse: false,
     passiveEffects: [{
-      targetSkillId: 'eternal_lightness',
+      targetSkillId: 'absolute_kill',
       effectType: 'damage_multiplier',
       multiplierPerLevel: 0.02
     }],
-    description: '이터널 라이트니스의 데미지를 레벨당 2% 증가'
-  },
-
-  // 엔드리스 다크니스 리인포스
-  {
-    id: 'endless_darkness_reinforce',
-    name: '엔드리스 다크니스 리인포스',
-    icon: '💪',
-    element: 'NONE',
-    category: 'passive_enhancement',
-    maxLevel: 60,
-    damage: 0,
-    hitCount: 0,
-    maxTargets: 0,
-    gaugeCharge: 0,
-    cooldown: 0,
-    canDirectUse: false,
-    passiveEffects: [{
-      targetSkillId: 'endless_darkness',
-      effectType: 'damage_multiplier',
-      multiplierPerLevel: 0.02
-    }],
-    description: '엔드리스 다크니스의 데미지를 레벨당 2% 증가'
+    description: '트와일라잇 노바의 데미지를 레벨당 2% 증가'
   },
 
   // ==================== 패시브 강화 스킬 (6차 마스터리) ====================
@@ -787,64 +781,6 @@ export const LUMINOUS_SKILLS: SkillData[] = [
     }],
     description: '리버레이션 오브의 최종 데미지 증가'
   },
-
-  // 이터널 라이트니스 VI (아포칼립스 VI에 종속)
-  {
-    id: 'eternal_lightness_mastery',
-    name: '이터널 라이트니스 VI',
-    icon: '🌟',
-    element: 'NONE',
-    category: 'passive_enhancement',
-    maxLevel: 30,
-    damage: 0,
-    hitCount: 0,
-    maxTargets: 0,
-    gaugeCharge: 0,
-    cooldown: 0,
-    canDirectUse: false,
-    dependsOn: 'apocalypse_mastery',
-    passiveEffects: [{
-      targetSkillId: 'eternal_lightness',
-      effectType: 'skill_override',
-      overrideData: {
-        damage: [null,
-          775, 795, 815, 835, 855, 875, 895, 915, 935, 955, // 1-10
-          975, 995, 1015, 1035, 1055, 1075, 1095, 1115, 1135, 1155, // 11-20
-          1175, 1195, 1215, 1235, 1255, 1275, 1295, 1315, 1335, 1355 // 21-30
-        ]
-      }
-    }],
-    description: '이터널 라이트니스를 강화 (아포칼립스 VI 레벨에 종속)'
-  },
-
-  // 엔드리스 다크니스 VI (라이트 리플렉션 VI에 종속)
-  {
-    id: 'endless_darkness_mastery',
-    name: '엔드리스 다크니스 VI',
-    icon: '🌟',
-    element: 'NONE',
-    category: 'passive_enhancement',
-    maxLevel: 30,
-    damage: 0,
-    hitCount: 0,
-    maxTargets: 0,
-    gaugeCharge: 0,
-    cooldown: 0,
-    canDirectUse: false,
-    dependsOn: 'reflection_mastery',
-    passiveEffects: [{
-      targetSkillId: 'endless_darkness',
-      effectType: 'skill_override',
-      overrideData: {
-        damage: [null,
-          855, 880, 905, 930, 955, 980, 1005, 1030, 1055, 1080, // 1-10
-          1105, 1130, 1155, 1180, 1205, 1230, 1255, 1280, 1305, 1330, // 11-20
-          1355, 1380, 1405, 1430, 1455, 1480, 1505, 1530, 1555, 1580 // 21-30
-        ]
-      }
-    }],
-    description: '엔드리스 다크니스를 강화 (라이트 리플렉션 VI 레벨에 종속)'
-  }
 ];
 
 // 카테고리별 스킬 분류 함수

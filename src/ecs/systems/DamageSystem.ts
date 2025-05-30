@@ -22,20 +22,20 @@ interface DamageModifiers {
   // 기본 데미지 관련
   baseDamagePercent: number;        // 기본 퍼뎀%
   enhancedDamagePercent: number;    // 5차/6차 Override 적용된 퍼뎀%
-  
+
   // 버프/스탯 배율들
   damageIncreaseMultiplier: number; // 데미지 증가% 배율
   bossDamageMultiplier: number;     // 보스 데미지% 배율
   finalDamageMultiplier: number;    // 최종 데미지% 배율
-  
+
   // 크리티컬 관련
   totalCritRate: number;            // 최종 크리티컬 확률
   critDamageMultiplier: number;     // 크리티컬 데미지 배율
-  
+
   // 방어 관련
   totalIgnoreDefense: number;       // 총 방어율 무시%
   totalIgnoreElementalResist: number; // 총 속성 저항 무시%
-  
+
   // 기타
   masteryRange: { min: number; max: number }; // 숙련도 범위
 }
@@ -45,17 +45,17 @@ interface ComprehensiveDamageResult {
   totalDamage: number;
   effectiveHitCount: number;
   criticalHits: number;
-  
+
   // 상세 계산 정보
   baseHitCount: number;
   additionalHitCount: number;
   hasAdditionalHit: boolean;
-  
+
   // 각 단계별 계산값
   perHitDamageBeforeCrit: number;   // 크리 적용 전 1타 데미지
   perHitDamageAfterCrit: number;    // 크리 적용 후 1타 데미지
   additionalHitDamage: number;      // 추가타 1타 데미지
-  
+
   // 적용된 배율들
   appliedModifiers: DamageModifiers;
   enemyReductions: {
@@ -64,7 +64,7 @@ interface ComprehensiveDamageResult {
     elementalReduction: number;
     totalReduction: number;
   };
-  
+
   // 디버그 정보
   calculationLog: string[];
 }
@@ -89,7 +89,7 @@ export class DamageSystem extends System {
   ): number {
     const damageComp = this.world.getComponent<DamageComponent>(attackerEntity, 'damage');
     const timeComp = this.world.getComponent<TimeComponent>(attackerEntity, 'time');
-    
+
     if (!damageComp || !timeComp) return 0;
 
     // 1. 기본 스킬 데이터 가져오기
@@ -211,10 +211,10 @@ export class DamageSystem extends System {
 
     // 크리티컬 판정 및 적용
     const isCritical = Math.random() * 100 < modifiers.totalCritRate;
-    const perHitDamageAfterCrit = isCritical ? 
-      Math.floor(perHitDamageBeforeCrit * modifiers.critDamageMultiplier) : 
+    const perHitDamageAfterCrit = isCritical ?
+      Math.floor(perHitDamageBeforeCrit * modifiers.critDamageMultiplier) :
       perHitDamageBeforeCrit;
-    
+
     calculationLog.push(`크리티컬: ${isCritical ? `O (×${modifiers.critDamageMultiplier.toFixed(2)})` : 'X'} = ${perHitDamageAfterCrit.toLocaleString()}`);
 
     // 기본 타격들 총 데미지
@@ -223,7 +223,7 @@ export class DamageSystem extends System {
     // 추가타 데미지 계산
     let additionalHitDamage = 0;
     let additionalHitsTotalDamage = 0;
-    
+
     if (additionalHitInfo.hasAdditionalHit) {
       additionalHitDamage = Math.floor(perHitDamageBeforeCrit * additionalHitInfo.multiplier);
       if (isCritical) {
@@ -258,9 +258,9 @@ export class DamageSystem extends System {
     };
   }
 
-  // LearnedSkillsComponent를 사용하여 강화된 스킬 데이터 가져오기
+  // getEnhancedSkillData 메서드 개선
   private getEnhancedSkillData(
-    baseSkillDef: SkillData, 
+    baseSkillDef: SkillData,
     learnedSkills?: LearnedSkillsComponent,
     currentState?: LuminousState
   ): SkillData {
@@ -268,37 +268,56 @@ export class DamageSystem extends System {
 
     if (!learnedSkills) return enhancedData;
 
-    // 1. 동적 스킬 처리 (트노바 등)
+    // 1. 동적 스킬 처리 (트노바, 퍼니싱 등)
     if (baseSkillDef.isDynamic && baseSkillDef.getDynamicProperties && currentState) {
       const dynamicProps = baseSkillDef.getDynamicProperties(currentState);
       enhancedData = { ...enhancedData, ...dynamicProps };
+
+      // 동적 스킬 로그
+      console.log(`${baseSkillDef.name} 동적 속성 적용 (${currentState}):`, {
+        damage: dynamicProps.damage,
+        hitCount: dynamicProps.hitCount,
+        element: dynamicProps.element
+      });
     }
 
     // 2. 6차 마스터리 스킬 오버라이드 확인
     const masterySkillId = `${baseSkillDef.id}_mastery`;
     const masteryLevel = learnedSkills.getSkillLevel(masterySkillId);
-    
+
     if (masteryLevel > 0) {
       const masterySkill = LUMINOUS_SKILLS.find(s => s.id === masterySkillId);
-      
+
       if (masterySkill?.passiveEffects) {
         masterySkill.passiveEffects.forEach(effect => {
           if (effect.targetSkillId === baseSkillDef.id && effect.effectType === 'skill_override' && effect.overrideData) {
-            // 각 속성별로 오버라이드 적용
-            Object.entries(effect.overrideData).forEach(([property, values]) => {
-              if (Array.isArray(values) && values[masteryLevel] !== null && values[masteryLevel] !== undefined) {
-                // 동적 스킬의 상태별 속성 처리
-                if (property.includes('Light') || property.includes('Dark') || property.includes('Equilibrium')) {
-                  const statePrefix = property.replace('damage', '').toLowerCase();
-                  if (currentState?.toLowerCase().includes(statePrefix)) {
+
+            // 동적 스킬의 상태별 오버라이드 처리
+            if (baseSkillDef.isDynamic && currentState) {
+              const stateKey = this.getStateOverrideKey(currentState);
+
+              Object.entries(effect.overrideData).forEach(([property, values]) => {
+                if (Array.isArray(values) && values[masteryLevel] !== null && values[masteryLevel] !== undefined) {
+
+                  // 상태별 데미지 오버라이드 확인
+                  if (property === stateKey && property.includes('damage')) {
                     enhancedData.damage = values[masteryLevel];
+                    console.log(`${baseSkillDef.name} 6차 오버라이드 (${currentState}): ${property} = ${values[masteryLevel]}`);
                   }
-                } else {
-                  // 일반 속성 오버라이드
+                  // 공통 속성 오버라이드 (게이지 충전 등)
+                  else if (!property.includes('Light') && !property.includes('Dark') && !property.includes('Equilibrium')) {
+                    (enhancedData as any)[property] = values[masteryLevel];
+                  }
+                }
+              });
+            } else {
+              // 일반 스킬의 오버라이드 처리
+              Object.entries(effect.overrideData).forEach(([property, values]) => {
+                if (Array.isArray(values) && values[masteryLevel] !== null && values[masteryLevel] !== undefined) {
                   (enhancedData as any)[property] = values[masteryLevel];
                 }
-              }
-            });
+              });
+            }
           }
         });
       }
@@ -313,6 +332,20 @@ export class DamageSystem extends System {
     return enhancedData;
   }
 
+  // 상태별 오버라이드 키 생성 헬퍼
+  private getStateOverrideKey(state: LuminousState): string {
+    switch (state) {
+      case 'LIGHT':
+        return 'damageLight';
+      case 'DARK':
+        return 'damageDark';
+      case 'EQUILIBRIUM':
+        return 'damageEquilibrium';
+      default:
+        return 'damage';
+    }
+  }
+
   // 모든 데미지 수정자 계산
   private calculateAllDamageModifiers(
     casterEntity: any,
@@ -322,7 +355,7 @@ export class DamageSystem extends System {
     learnedSkills?: LearnedSkillsComponent
   ): DamageModifiers {
     const stats = statsComp.stats;
-    
+
     // 1. 기본값들
     const baseDamagePercent = skillData.damage || 0;
     let enhancedDamagePercent = baseDamagePercent;
@@ -330,7 +363,7 @@ export class DamageSystem extends System {
     // 2. 버프 효과들
     let damageIncreaseMultiplier = 1.0;
     let finalDamageMultiplier = 1.0;
-    
+
     if (buffComp) {
       const buffs = buffComp.getAllBuffs();
       buffs.forEach(buff => {
@@ -360,7 +393,7 @@ export class DamageSystem extends System {
 
     // 4. 캐릭터 스탯들
     const bossDamageMultiplier = 1 + stats.bossDamage / 100;
-    
+
     // 최종 데미지 (캐릭터 기본 스탯)
     if (stats.finalDamage) {
       finalDamageMultiplier *= (1 + stats.finalDamage / 100);
@@ -376,7 +409,7 @@ export class DamageSystem extends System {
     // 6. 방어 관련
     let totalIgnoreDefense = stats.ignoreDefense;
     let totalIgnoreElementalResist = stats.ignoreElementalResist;
-    
+
     if (skillData.additionalIgnoreDefense) {
       totalIgnoreDefense = Math.min(100, totalIgnoreDefense + skillData.additionalIgnoreDefense);
     }
@@ -470,10 +503,10 @@ export class DamageSystem extends System {
   // 데미지 후 효과 처리 (간접 스킬, 특수 효과 등)
   private handlePostDamageEffects(casterEntity: any, targetEntity: any, skillDef: SkillData): void {
     const stateComp = this.world.getComponent<StateComponent>(casterEntity, 'state');
-    
+
     // 간접 스킬 자동 발동
     this.triggerIndirectSkills(casterEntity, skillDef, stateComp);
-    
+
     // 빛과 어둠의 세례 쿨타임 감소
     this.handleBaptismEffect(casterEntity, skillDef.id, skillDef, stateComp);
   }
@@ -484,41 +517,41 @@ export class DamageSystem extends System {
 
     const skillComp = this.world.getComponent<SkillComponent>(entity, 'skill');
     const timeComp = this.world.getComponent<TimeComponent>(entity, 'time');
-    
+
     if (!skillComp || !timeComp) return;
 
-    const indirectSkills = LUMINOUS_SKILLS.filter(skill => 
-      skill.category === 'indirect_attack' && 
+    const indirectSkills = LUMINOUS_SKILLS.filter(skill =>
+      skill.category === 'indirect_attack' &&
       skill.triggerConditions?.onSkillHit
     );
 
     indirectSkills.forEach(indirectSkill => {
       const trigger = indirectSkill.triggerConditions!.onSkillHit!;
-      
+
       let shouldTrigger = true;
-      
+
       if (trigger.elements && !trigger.elements.includes(triggerSkill.element)) {
         shouldTrigger = false;
       }
-      
+
       if (trigger.categories && !trigger.categories.includes(triggerSkill.category)) {
         shouldTrigger = false;
       }
-      
+
       if (trigger.requiredState && !trigger.requiredState.includes(stateComp.currentState)) {
         shouldTrigger = false;
       }
-      
+
       if (!skillComp.isSkillAvailable(indirectSkill.id)) {
         shouldTrigger = false;
       }
-      
+
       if (shouldTrigger) {
         if (skillComp.useSkill(indirectSkill.id, timeComp.currentTime)) {
           // 간접 스킬은 단일 타겟으로 계산
           // TODO: 적절한 타겟 Entity 전달 필요
           console.log(`${indirectSkill.name} 자동 발동`);
-          
+
           const gaugeSystem = this.world.getSystem<any>('GaugeSystem');
           if (gaugeSystem) {
             gaugeSystem.chargeGauge(entity, indirectSkill.id, false);
@@ -538,13 +571,13 @@ export class DamageSystem extends System {
     if (!baptismSkill || !baptismSkill.cooldownReductionOnEquilibriumSkill) return;
 
     const reductionConfig = baptismSkill.cooldownReductionOnEquilibriumSkill;
-    
+
     let shouldReduce = true;
-    
+
     if (reductionConfig.excludeSkills && reductionConfig.excludeSkills.includes(skillId)) {
       shouldReduce = false;
     }
-    
+
     if (reductionConfig.excludeConditions) {
       reductionConfig.excludeConditions.forEach(condition => {
         if (condition.skillId === skillId) {
@@ -554,7 +587,7 @@ export class DamageSystem extends System {
         }
       });
     }
-    
+
     if (shouldReduce) {
       const skillSystem = this.world.getSystem<any>('SkillSystem');
       if (skillSystem) {
@@ -563,7 +596,7 @@ export class DamageSystem extends System {
     }
   }
 
-  // UI/분석용 간단한 데미지 정보 계산
+  // getSkillDamageInfo 메서드도 동적 스킬 지원 강화
   public getSkillDamageInfo(
     casterEntity: any,
     targetEntity: any,
@@ -574,6 +607,9 @@ export class DamageSystem extends System {
     enhancedDamage: number;
     modifiers: DamageModifiers;
     estimatedDamageRange: { min: number; max: number; average: number };
+    isDynamic: boolean;
+    currentState?: LuminousState;
+    dynamicVariants?: { [state: string]: { damage: number; hitCount: number } };
   } {
     const skillDef = LUMINOUS_SKILLS.find(s => s.id === skillId);
     if (!skillDef) {
@@ -582,7 +618,8 @@ export class DamageSystem extends System {
         baseDamage: 0,
         enhancedDamage: 0,
         modifiers: {} as DamageModifiers,
-        estimatedDamageRange: { min: 0, max: 0, average: 0 }
+        estimatedDamageRange: { min: 0, max: 0, average: 0 },
+        isDynamic: false
       };
     }
 
@@ -590,18 +627,53 @@ export class DamageSystem extends System {
     const casterBuff = this.world.getComponent<BuffComponent>(casterEntity, 'buff');
     const learnedSkills = this.world.getComponent<LearnedSkillsComponent>(casterEntity, 'learnedSkills');
     const casterState = this.world.getComponent<StateComponent>(casterEntity, 'state');
-    
+
     if (!casterStats) {
       return {
         skillName: skillDef.name,
         baseDamage: skillDef.damage || 0,
         enhancedDamage: skillDef.damage || 0,
         modifiers: {} as DamageModifiers,
-        estimatedDamageRange: { min: 0, max: 0, average: 0 }
+        estimatedDamageRange: { min: 0, max: 0, average: 0 },
+        isDynamic: skillDef.isDynamic || false,
+        currentState: casterState?.currentState
       };
     }
 
+    // 동적 스킬인 경우 모든 상태의 정보 수집
+    const result: any = {
+      skillName: skillDef.name,
+      isDynamic: skillDef.isDynamic || false,
+      currentState: casterState?.currentState
+    };
+
+    if (skillDef.isDynamic && skillDef.getDynamicProperties) {
+      // 모든 상태에 대한 정보 계산
+      const dynamicVariants: { [state: string]: { damage: number; hitCount: number } } = {};
+
+      ['LIGHT', 'DARK', 'EQUILIBRIUM'].forEach(state => {
+        const props = skillDef.getDynamicProperties!(state as LuminousState);
+        dynamicVariants[state] = {
+          damage: props.damage || 0,
+          hitCount: props.hitCount || 1
+        };
+      });
+
+      result.dynamicVariants = dynamicVariants;
+
+      // 현재 상태의 데이터를 기본값으로 사용
+      const currentStateProps = skillDef.getDynamicProperties(casterState?.currentState || 'LIGHT');
+      result.baseDamage = skillDef.damage || currentStateProps.damage || 0;
+      result.enhancedDamage = currentStateProps.damage || 0;
+    } else {
+      result.baseDamage = skillDef.damage || 0;
+      result.enhancedDamage = skillDef.damage || 0;
+    }
+
+    // 강화 적용된 스킬 데이터 가져오기
     const enhancedSkillData = this.getEnhancedSkillData(skillDef, learnedSkills, casterState?.currentState);
+    result.enhancedDamage = enhancedSkillData.damage || result.enhancedDamage;
+
     const modifiers = this.calculateAllDamageModifiers(
       casterEntity,
       enhancedSkillData,
@@ -610,23 +682,21 @@ export class DamageSystem extends System {
       learnedSkills
     );
 
-    // 대략적인 데미지 범위 계산 (크리/숙련도 고려)
-    const baseCalculation = modifiers.enhancedDamagePercent * 
-                          modifiers.damageIncreaseMultiplier * 
-                          modifiers.bossDamageMultiplier * 
-                          modifiers.finalDamageMultiplier;
+    result.modifiers = modifiers;
+
+    // 대략적인 데미지 범위 계산
+    const baseCalculation = modifiers.enhancedDamagePercent *
+      modifiers.damageIncreaseMultiplier *
+      modifiers.bossDamageMultiplier *
+      modifiers.finalDamageMultiplier;
 
     const minDamage = Math.floor(baseCalculation * modifiers.masteryRange.min);
     const maxDamage = Math.floor(baseCalculation * modifiers.masteryRange.max * modifiers.critDamageMultiplier);
-    const averageDamage = Math.floor(baseCalculation * ((modifiers.masteryRange.min + modifiers.masteryRange.max) / 2) * 
-                                   (1 + (modifiers.totalCritRate / 100) * (modifiers.critDamageMultiplier - 1)));
+    const averageDamage = Math.floor(baseCalculation * ((modifiers.masteryRange.min + modifiers.masteryRange.max) / 2) *
+      (1 + (modifiers.totalCritRate / 100) * (modifiers.critDamageMultiplier - 1)));
 
-    return {
-      skillName: skillDef.name,
-      baseDamage: skillDef.damage || 0,
-      enhancedDamage: enhancedSkillData.damage || 0,
-      modifiers,
-      estimatedDamageRange: { min: minDamage, max: maxDamage, average: averageDamage }
-    };
+    result.estimatedDamageRange = { min: minDamage, max: maxDamage, average: averageDamage };
+
+    return result;
   }
 }

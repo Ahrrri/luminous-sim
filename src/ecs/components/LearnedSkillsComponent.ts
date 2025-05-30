@@ -150,7 +150,7 @@ export class LearnedSkillsComponent extends BaseComponent {
         return null;
     }
 
-    // 종속 관계 처리 (이터널은 아포VI, 엔드리스는 라리VI 따라감)
+    // LearnedSkillsComponent에서
     private handleDependentSkills(enhancements: SkillEnhancement[], currentTime?: number): void {
         const dependencies = [
             { dependent: 'eternal_lightness', parent: 'apocalypse' },
@@ -160,10 +160,8 @@ export class LearnedSkillsComponent extends BaseComponent {
         dependencies.forEach(({ dependent, parent }) => {
             const parentEnhancement = enhancements.find(e => e.skillId === parent);
             if (parentEnhancement && parentEnhancement.sixthLevel > 0) {
-                const dependentMasteryId = this.getMasterySkillId(dependent);
-                if (dependentMasteryId) {
-                    this.learnSkill(dependentMasteryId, parentEnhancement.sixthLevel, 'passive_mastery', currentTime);
-                }
+                // 종속 스킬을 부모의 6차 레벨로 직접 설정
+                this.learnSkill(dependent, parentEnhancement.sixthLevel, 'active', currentTime);
             }
         });
     }
