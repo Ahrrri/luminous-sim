@@ -44,7 +44,7 @@ export const ManualPracticePanel: React.FC = () => {
   // ECS 훅들 사용
   const { world, step } = useECS();
   const character = useLuminousCharacter();
-  const { useSkill } = useSkillActions(character?.entity || null);
+  const { useSkill } = useSkillActions(character?.entity || null, character?.enemyEntity || null);
 
   // React에서 관리하는 디스플레이 상태
   const [displayState, setDisplayState] = useState<CharacterDisplayState>({

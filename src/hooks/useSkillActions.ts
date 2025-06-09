@@ -8,11 +8,11 @@ import { GaugeSystem } from '../ecs/systems/GaugeSystem';
 import { StateComponent } from '../ecs/components/StateComponent';
 import type { SkillData } from '../data/types/skillTypes';
 
-export function useSkillActions(entity: Entity | null) {
+export function useSkillActions(entity: Entity | null, enemyEntity: Entity | null) {
   const { world } = useECS();
 
   const useSkill = useCallback((skillDef: SkillData) => {
-    if (!entity) return false;
+    if (!entity || !enemyEntity) return false;
 
     // 시스템들 가져오기
     const skillSystem = world.getSystem<SkillSystem>('SkillSystem');
@@ -34,19 +34,15 @@ export function useSkillActions(entity: Entity | null) {
 
     // 스킬 사용 시도
     if (skillSystem.tryUseSkill(entity, skillDef.id)) {
-      // 실제 데미지와 타수 결정
-      const actualDamage = actualSkillData.damage || 0;
-      const actualHitCount = actualSkillData.hitCount || 1;
-      const actualMaxTargets = actualSkillData.maxTargets || skillDef.maxTargets;
-
-      // 데미지 계산 및 적용
-      if (actualDamage > 0) {
+      // 데미지 계산 및 적용 (올바른 파라미터로 호출)
+      if ((actualSkillData.damage || 0) > 0) {
         const totalDamage = damageSystem.calculateAndApplyDamage(
-          entity,
-          skillDef.id,
-          actualDamage,
-          actualHitCount,
-          actualMaxTargets
+          entity,           // attackerEntity
+          enemyEntity,      // targetEntity
+          skillDef.id,      // skillId
+          {                 // options
+            actualTargetCount: actualSkillData.maxTargets || skillDef.maxTargets || 1
+          }
         );
 
         console.log(`${skillDef.name} 사용: ${totalDamage.toLocaleString()} 데미지`);
@@ -63,7 +59,7 @@ export function useSkillActions(entity: Entity | null) {
 
     console.log(`${skillDef.name} 사용 불가 (쿨다운 또는 조건 미충족)`);
     return false;
-  }, [world, entity]);
+  }, [world, entity, enemyEntity]);
 
   return { useSkill };
 }

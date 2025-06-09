@@ -11,6 +11,7 @@ import { TimeComponent } from '../ecs/components/TimeComponent';
 import { StatsComponent } from '../ecs/components/StatsComponent';
 import { LearnedSkillsComponent } from '../ecs/components/LearnedSkillsComponent'; // EnhancementComponent 대체
 import { ActionDelayComponent } from '../ecs/components/ActionDelayComponent';
+import { EnemyStatsComponent } from '../ecs/components/EnemyStatsComponent';
 // 데이터 타입들
 import type { CharacterStats, SkillEnhancement } from '../data/types/characterTypes';
 import type { SkillData as ECSSkillData } from '../ecs/components/SkillComponent';
@@ -27,6 +28,7 @@ interface LuminousCharacterData {
   stats: StatsComponent;
   learnedSkills: LearnedSkillsComponent; // enhancement 대체
   actionDelay: ActionDelayComponent;
+  enemyEntity: Entity; // 전역 적 엔티티 추가
 }
 
 // 중앙화된 스킬 데이터를 ECS 스킬 데이터로 변환
@@ -87,6 +89,23 @@ export function useLuminousCharacter(
 
     // 루미너스 캐릭터 Entity 생성
     const entity = world.createEntity();
+    
+    // 전역 적 Entity 생성
+    const enemyEntity = world.createEntity();
+    const enemyStatsComp = new EnemyStatsComponent({
+      level: 285,
+      physicalDefense: 1200,
+      magicalDefense: 1200,
+      elementalResistances: {
+        fire: 0,
+        ice: 0,
+        lightning: 0,
+        poison: 0,
+        holy: 0,
+        dark: 0
+      }
+    });
+    world.addComponent(enemyEntity, enemyStatsComp);
 
     // 기본 컴포넌트들 추가
     const stateComp = new StateComponent(
@@ -158,12 +177,14 @@ export function useLuminousCharacter(
       time: timeComp,
       stats: statsComp,
       learnedSkills: learnedSkillsComp,
-      actionDelay: actionDelayComp
+      actionDelay: actionDelayComp,
+      enemyEntity
     });
 
     return () => {
       world.off('state:entered_equilibrium', onEquilibriumEnter);
       world.destroyEntity(entity);
+      world.destroyEntity(enemyEntity);
     };
   }, [world, characterStats, skillEnhancements]);
 
